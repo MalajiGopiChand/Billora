@@ -24,8 +24,7 @@ service cloud.firestore {
 
     // Settings Collection
     match /company_settings/{settingId} {
-      allow read, update, delete: if isOwner();
-      allow create: if isCreatingWithOwnerId();
+      allow read, write: if isAuthenticated() && request.auth.uid == settingId;
     }
     
     // Products Collection
