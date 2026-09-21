@@ -112,6 +112,17 @@ export function Admin() {
     }
   };
 
+  const markResolved = async (id: string, currentlyRead: boolean) => {
+    const newStatus = !currentlyRead;
+    try {
+      await setDoc(doc(db, 'contact_messages', id), { read: newStatus }, { merge: true });
+      setMessages(msgs => msgs.map(m => m.id === id ? { ...m, read: newStatus } : m));
+    } catch (err) {
+      console.error(err);
+      alert('Failed to update message status.');
+    }
+  };
+
   useEffect(() => { load(); }, []);
   const stats = overview ? [['Registered Clients', overview.clients, UsersRound], ['Active Subscriptions', overview.activeSubscriptions, Crown]] as const : [];
   
@@ -120,7 +131,7 @@ export function Admin() {
   <div className={styles.tabs}>
     <button className={activeTab === 'overview' ? styles.activeTab : ''} onClick={() => setActiveTab('overview')}>Overview</button>
     <button className={activeTab === 'clients' ? styles.activeTab : ''} onClick={() => setActiveTab('clients')}>Clients & Access</button>
-    <button className={activeTab === 'messages' ? styles.activeTab : ''} onClick={() => setActiveTab('messages')}>Messages {messages.length > 0 && <span>({messages.length})</span>}</button>
+    <button className={activeTab === 'messages' ? styles.activeTab : ''} onClick={() => setActiveTab('messages')}>Messages {messages.filter(m => !m.read).length > 0 && <span>{messages.filter(m => !m.read).length} Unresolved</span>}</button>
   </div>
   
   {error && <p className={styles.error}>{error}</p>}
@@ -129,31 +140,48 @@ export function Admin() {
     {activeTab === 'overview' && (
       <>
         <section className={styles.stats}>{stats.map(([label, value, Icon]) => <article key={label}><span><Icon size={19}/></span><p>{label}</p><strong>{value}</strong></article>)}</section>
-        <section className={styles.card}><div><h3>Recent client accounts</h3><p>All recently registered clients.</p></div><div className="table-scroll" style={{ marginTop: 15 }}><table className="data-table"><thead><tr><th>Email</th><th>Created</th><th>Subscription</th></tr></thead><tbody>{overview.recentClients.map((client) => <tr key={client.uid}><td>{client.email}</td><td>{client.createdAt ? new Date(client.createdAt).toLocaleDateString('en-IN') : '-'}</td><td><span className={styles.status}>{client.subscription}</span></td></tr>)}</tbody></table></div></section>
+        <section className={styles.card}><div><h3>Recent client accounts</h3><p>All recently registered clients.</p></div><div className="table-scroll"><table className="data-table"><thead><tr><th>Email</th><th>Created</th><th>Subscription</th></tr></thead><tbody>{overview.recentClients.map((client) => <tr key={client.uid}><td>{client.email}</td><td>{client.createdAt ? new Date(client.createdAt).toLocaleDateString('en-IN') : '-'}</td><td><span className={styles.status}>{client.subscription}</span></td></tr>)}</tbody></table></div></section>
       </>
     )}
 
     {activeTab === 'clients' && (
       <>
-        <section className={styles.card} style={{ marginBottom: 20 }}><div><h3>Grant or Edit Access</h3><p>Manually grant free access after receiving offline payment. Records the amount paid.</p></div><form onSubmit={handleGrantAccess} style={{ display: 'flex', gap: 10, marginTop: 15, flexWrap: 'wrap' }}><input type="email" placeholder="User email address" required value={grantEmail} onChange={e => setGrantEmail(e.target.value)} style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #c9d4df', background: '#fff', color: '#1e3045', width: '250px', fontSize: '13px' }} /><select value={grantDuration} onChange={e => setGrantDuration(e.target.value)} style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #c9d4df', background: '#fff', color: '#1e3045', fontSize: '13px' }}><option value="1">1 Month</option><option value="6">6 Months</option><option value="12">1 Year</option></select><input type="number" placeholder="Amount received (₹)" value={grantAmount} onChange={e => setGrantAmount(e.target.value)} style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #c9d4df', background: '#fff', color: '#1e3045', width: '160px', fontSize: '13px' }} /><button disabled={granting} className="primary-button" style={{ display: 'flex', gap: 6, alignItems: 'center' }}><Plus size={16}/> {granting ? 'Processing...' : 'Grant / Update'}</button></form>{grantMsg && <p style={{ marginTop: 10, fontSize: 13, color: grantMsg.includes('Success') ? '#16a34a' : '#dc2626' }}>{grantMsg}</p>}</section>
+        <section className={styles.card} style={{ marginBottom: 20 }}><div><h3>Grant or Edit Access</h3><p>Manually grant free access after receiving offline payment. Records the amount paid.</p></div>
+          <form onSubmit={handleGrantAccess} className={styles.formRow}>
+            <input type="email" placeholder="User email address" required value={grantEmail} onChange={e => setGrantEmail(e.target.value)} style={{ width: '250px' }} />
+            <select value={grantDuration} onChange={e => setGrantDuration(e.target.value)}>
+              <option value="1">1 Month</option>
+              <option value="6">6 Months</option>
+              <option value="12">1 Year</option>
+            </select>
+            <input type="number" placeholder="Amount received (₹)" value={grantAmount} onChange={e => setGrantAmount(e.target.value)} style={{ width: '160px' }} />
+            <button disabled={granting} className="primary-button" style={{ display: 'flex', gap: 6, alignItems: 'center' }}><Plus size={16}/> {granting ? 'Processing...' : 'Grant / Update'}</button>
+          </form>
+          {grantMsg && <p style={{ marginTop: 12, fontSize: 13, fontWeight: 600, color: grantMsg.includes('Success') ? '#16a34a' : '#dc2626' }}>{grantMsg}</p>}
+        </section>
         
-        <section className={styles.card} style={{ marginBottom: 20 }}><div><h3><Clock size={18} style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: 6 }}/> Pending Approvals</h3><p>Clients who signed up but do not have an active subscription.</p></div><div className="table-scroll" style={{ marginTop: 15 }}><table className="data-table"><thead><tr><th>Email</th><th>Created</th><th>Action</th></tr></thead><tbody>{overview.pendingClients.length > 0 ? overview.pendingClients.map((client) => <tr key={client.uid}><td>{client.email}</td><td>{client.createdAt ? new Date(client.createdAt).toLocaleDateString('en-IN') : '-'}</td><td><button className="secondary-button" onClick={() => { setGrantEmail(client.email); window.scrollTo({ top: 0, behavior: 'smooth' }); }}><Edit2 size={14}/> Edit Subscription</button></td></tr>) : <tr><td colSpan={3} className="empty-cell">No pending approvals.</td></tr>}</tbody></table></div></section>
+        <section className={styles.card}><div><h3><Clock size={18} style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: 6 }}/> Pending Approvals</h3><p>Clients who signed up but do not have an active subscription.</p></div><div className="table-scroll"><table className="data-table"><thead><tr><th>Email</th><th>Created</th><th>Action</th></tr></thead><tbody>{overview.pendingClients.length > 0 ? overview.pendingClients.map((client) => <tr key={client.uid}><td>{client.email}</td><td>{client.createdAt ? new Date(client.createdAt).toLocaleDateString('en-IN') : '-'}</td><td><button className="secondary-button" onClick={() => { setGrantEmail(client.email); window.scrollTo({ top: 0, behavior: 'smooth' }); }}><Edit2 size={14}/> Edit Subscription</button></td></tr>) : <tr><td colSpan={3} className="empty-cell">No pending approvals.</td></tr>}</tbody></table></div></section>
       </>
     )}
 
     {activeTab === 'messages' && (
       <section className={styles.card}>
-        <div><h3>Contact Us Messages</h3><p>Messages received from the Contact Support page.</p></div>
+        <div><h3>Support Inbox</h3><p>Manage customer inquiries and requests.</p></div>
         <div className={styles.messageList}>
-          {messages.length === 0 ? <p className="empty-cell" style={{ marginTop: 20 }}>No messages yet.</p> : 
+          {messages.length === 0 ? <p className="empty-cell">No messages yet.</p> : 
             messages.map(msg => (
-              <div key={msg.id} className={styles.messageItem}>
+              <div key={msg.id} className={`${styles.messageItem} ${msg.read ? styles.resolved : ''}`}>
                 <div className={styles.msgHeader}>
                   <strong><Mail size={14}/> {msg.email}</strong>
                   <span>{msg.createdAt?.toDate ? msg.createdAt.toDate().toLocaleString('en-IN') : 'Unknown date'}</span>
                 </div>
                 <h4>{msg.subject}</h4>
                 <p>{msg.message}</p>
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <button onClick={() => markResolved(msg.id, msg.read)} className={styles.resolveBtn}>
+                    {msg.read ? 'Mark as Unresolved' : 'Mark as Resolved'}
+                  </button>
+                </div>
               </div>
             ))
           }
