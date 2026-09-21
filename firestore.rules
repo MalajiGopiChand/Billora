@@ -1,0 +1,77 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Checks if the user is logged in
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Admin check (the owner email)
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.email == 'thegopichand@gmail.com';
+    }
+    
+    // Checks if the document belongs to the currently logged in user
+    function isOwner() {
+      return isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // Checks if the user is creating a document with their own user ID
+    function isCreatingWithOwnerId() {
+      return isAuthenticated() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Settings Collection
+    match /company_settings/{settingId} {
+      allow read, update, delete: if isOwner();
+      allow create: if isCreatingWithOwnerId();
+    }
+    
+    // Products Collection
+    match /products/{productId} {
+      allow read, update, delete: if isOwner();
+      allow create: if isCreatingWithOwnerId();
+    }
+    
+    // Invoices / Bills Collection
+    match /invoices/{invoiceId} {
+      allow read, update, delete: if isOwner();
+      allow create: if isCreatingWithOwnerId();
+    }
+    match /bills/{billId} {
+      allow read, update, delete: if isOwner();
+      allow create: if isCreatingWithOwnerId();
+    }
+    
+    // Orders Collection
+    match /orders/{orderId} {
+      allow read, update, delete: if isOwner();
+      allow create: if isCreatingWithOwnerId();
+    }
+    
+    // Customers Collection
+    match /customers/{customerId} {
+      allow read, update, delete: if isOwner();
+      allow create: if isCreatingWithOwnerId();
+    }
+    
+    // Users Collection (Users can only read/write their own record, Admin can read all)
+    match /users/{userId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+      allow read: if isAdmin();
+    }
+    
+    // Subscriptions Collection (Users can read their own, Admin can read/write all)
+    match /subscriptions/{userId} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow read, write: if isAdmin();
+    }
+    
+    // Contact Messages Collection (Users can create, Admin can read/write)
+    match /contact_messages/{messageId} {
+      allow create: if isCreatingWithOwnerId();
+      allow read, write: if isAdmin();
+    }
+  }
+}
