@@ -4,28 +4,15 @@ import { getFirestore } from 'firebase/firestore';
 import { getFunctions } from 'firebase/functions';
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyCwzSpZS3eTECQ6OvxCLAX8xA77EWIkmBA",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "billingsoftware-cdb39.firebaseapp.com",
+  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || "https://billingsoftware-cdb39-default-rtdb.firebaseio.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "billingsoftware-cdb39",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "billingsoftware-cdb39.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "961869203935",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:961869203935:web:cd79db8fab61ff20049c6a",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-BW7RHEVYXN",
 };
-
-if (!firebaseConfig.apiKey) {
-  document.body.innerHTML = `
-    <div style="display:flex; justify-content:center; align-items:center; min-height:100vh; background:#0f172a; color:#fff; font-family:sans-serif; text-align:center; padding:20px;">
-      <div style="background:#1e293b; padding:40px; border-radius:12px; max-width:500px;">
-        <h2 style="color:#ef4444; margin-top:0;">Firebase Configuration Missing</h2>
-        <p style="color:#94a3b8; line-height:1.6;">The Vercel environment variables have not been applied correctly. Please ensure you have added <strong>VITE_FIREBASE_API_KEY</strong> to your Vercel project settings under Production, Preview, and Development environments.</p>
-        <p style="color:#94a3b8; margin-bottom:0;">After adding them, you must hit <strong>Redeploy</strong> in Vercel.</p>
-      </div>
-    </div>
-  `;
-  throw new Error("Missing Firebase API Key");
-}
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
