@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { BarChart3, Crown, FilePlus2, Files, LogOut, Menu, Package, Settings, Users, X, Phone } from 'lucide-react';
+import { BarChart3, Crown, FilePlus2, Files, LogOut, Menu, Package, User, Users, X, Phone } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import styles from './AppLayout.module.css';
 
@@ -10,7 +10,7 @@ const links = [
   ['/all-bills', 'All Bills', Files],
   ['/products', 'Products', Package],
   ['/customers', 'Customers', Users],
-  ['/settings', 'Settings', Settings],
+  ['/settings', 'My Profile', User],
   ['/contact', 'Contact Us', Phone],
 ] as const;
 

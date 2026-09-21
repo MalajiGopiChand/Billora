@@ -1,0 +1,23 @@
+.hero { background: linear-gradient(135deg, #0f172a, #1e293b); color: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 4px 16px rgba(15, 23, 42, 0.1); width: 100%; box-sizing: border-box; margin-bottom: 24px; display: flex; align-items: center; gap: 20px; }
+.heroIcon { width: 64px; height: 64px; background: rgba(99, 102, 241, 0.2); border-radius: 50%; display: grid; place-items: center; color: #a5b4fc; }
+.heroText p { color: #cbd5e1; margin: 0 0 4px; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+.heroText h2 { font-size: 24px; margin: 0 0 7px; color: #fff; }
+.heroText span { color: #94a3b8; font-size: 13px; }
+
+.grid { max-width: 720px; width: 100%; box-sizing: border-box; }
+
+.card { background: #ffffff; border: none; border-radius: 24px; padding: 32px; box-shadow: 0 10px 40px rgba(0,0,0,0.03), 0 2px 10px rgba(0,0,0,0.02); width: 100%; box-sizing: border-box; overflow: hidden; }
+.card h3 { margin: 0 0 6px; font-size: 18px; color: #0f172a; }
+.card p { margin: 0 0 24px; font-size: 13px; color: #64748b; }
+
+.form { display: grid; gap: 18px; }
+.form label { display: grid; gap: 6px; font-size: 13px; font-weight: 650; color: #334155; }
+.form input, .form textarea { width: 100%; box-sizing: border-box; }
+.form textarea { resize: vertical; }
+
+.success { color: #166534; background: #dcfce7; padding: 12px; margin: 0; border-radius: 8px; font-size: 13px; }
+
+@media (max-width: 600px) {
+  .hero { flex-direction: column; text-align: center; }
+  .card { padding: 20px; }
+}
