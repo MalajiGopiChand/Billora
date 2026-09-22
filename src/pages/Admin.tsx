@@ -21,8 +21,12 @@ import {
   Calendar,
   CreditCard,
   Check,
+  Ban,
+  UserX,
+  ExternalLink,
+  Zap,
 } from 'lucide-react';
-import { collection, doc, getDoc, getDocs, setDoc, Timestamp } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, getDocs, setDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import {
   listContactMessages,
@@ -45,20 +49,38 @@ type ClientRecord = {
   uid: string;
   email: string;
   createdAt: string | null;
-  subscriptionStatus: 'active' | 'expired' | 'none';
+  subscriptionStatus: 'active' | 'expired' | 'cancelled' | 'none';
   plan: string;
   amount: number;
   expiresAt: Date | null;
   startedAt: Date | null;
   grantedBy?: string;
   paymentId?: string;
+  orderId?: string;
+  isGateway: boolean;
+};
+
+type TransactionRecord = {
+  id: string;
+  uid: string;
+  email: string;
+  plan: string;
+  amount: number;
+  paymentId?: string;
+  orderId?: string;
+  date: Date;
+  isGateway: boolean;
+  status: 'active' | 'expired' | 'cancelled';
 };
 
 type OverviewData = {
   totalClients: number;
   activeSubscriptions: number;
   totalRevenue: number;
+  gatewayRevenue: number;
+  manualRevenue: number;
   estimatedMRR: number;
+  transactions: TransactionRecord[];
   clients: ClientRecord[];
   allUsers: Array<{ uid: string; email: string }>;
   planBreakdown: {
@@ -76,6 +98,9 @@ export function Admin() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Overview Gateway Filter (default to gateway_only as requested)
+  const [gatewayViewFilter, setGatewayViewFilter] = useState<'gateway_only' | 'all' | 'manual'>('gateway_only');
+
   // Manual Grant State
   const [grantEmail, setGrantEmail] = useState('');
   const [grantDuration, setGrantDuration] = useState('12');
@@ -85,7 +110,10 @@ export function Admin() {
 
   // Client Search & Filter
   const [clientSearch, setClientSearch] = useState('');
-  const [clientFilter, setClientFilter] = useState<'all' | 'active' | 'expired' | 'none'>('all');
+  const [clientFilter, setClientFilter] = useState<'all' | 'active' | 'gateway' | 'expired' | 'cancelled' | 'none'>('all');
+
+  // Action status message
+  const [actionAlert, setActionAlert] = useState<{ text: string; ok: boolean } | null>(null);
 
   // Messages Search & Filter
   const [msgSearch, setMsgSearch] = useState('');
@@ -122,7 +150,10 @@ export function Admin() {
 
       const now = new Date();
       let totalRevenue = 0;
+      let gatewayRevenue = 0;
+      let manualRevenue = 0;
       let estimatedMRR = 0;
+      const transactions: TransactionRecord[] = [];
 
       const planBreakdown = {
         monthly: { totalCount: 0, activeCount: 0, revenue: 0 },
@@ -136,7 +167,8 @@ export function Admin() {
         const sub = docSnap.data();
         const planKey = (sub.plan || '').toLowerCase();
         const expiresAt = getDate(sub.expiresAt);
-        const isActive = expiresAt > now && sub.status !== 'cancelled' && sub.status !== 'expired';
+        const isActive = expiresAt > now && sub.status === 'active';
+        const isCancelled = sub.status === 'cancelled';
 
         let subAmount = Number(sub.amount || 0);
         if (!subAmount) {
@@ -145,7 +177,28 @@ export function Admin() {
           else if (planKey.includes('yearly') || planKey.includes('annual')) subAmount = PLAN_CONFIG.yearly.defaultPrice;
         }
 
+        const isGateway = Boolean(sub.paymentId && sub.paymentId !== 'offline' && sub.grantedBy !== 'admin');
+
         totalRevenue += subAmount;
+        if (isGateway) {
+          gatewayRevenue += subAmount;
+        } else {
+          manualRevenue += subAmount;
+        }
+
+        // Record transaction
+        transactions.push({
+          id: docSnap.id,
+          uid: sub.uid || docSnap.id,
+          email: sub.email || 'Customer',
+          plan: sub.plan || 'Plan',
+          amount: subAmount,
+          paymentId: sub.paymentId,
+          orderId: sub.orderId,
+          date: getDate(sub.startedAt || sub.updatedAt),
+          isGateway,
+          status: isCancelled ? 'cancelled' : isActive ? 'active' : 'expired',
+        });
 
         // Categorize by plan
         if (planKey === 'monthly' || planKey.includes('monthly')) {
@@ -180,8 +233,11 @@ export function Admin() {
         }
       });
 
+      // Sort transactions newest first
+      transactions.sort((a, b) => b.date.getTime() - a.date.getTime());
+
       const activeSubDocs = subsSnap.docs.filter(
-        (item) => getDate(item.data().expiresAt) > now && item.data().status !== 'cancelled' && item.data().status !== 'expired'
+        (item) => getDate(item.data().expiresAt) > now && item.data().status === 'active'
       );
 
       const allUsers = usersSnap.docs.map((item) => ({
@@ -193,7 +249,9 @@ export function Admin() {
         const subDoc = subsSnap.docs.find((s) => s.id === userDoc.id)?.data();
         const expiresAt = subDoc ? getDate(subDoc.expiresAt) : null;
         const startedAt = subDoc ? getDate(subDoc.startedAt) : null;
-        const isActive = Boolean(expiresAt && expiresAt > now && subDoc?.status !== 'cancelled' && subDoc?.status !== 'expired');
+        const isCancelled = subDoc?.status === 'cancelled';
+        const isActive = Boolean(expiresAt && expiresAt > now && subDoc?.status === 'active');
+        const isGateway = Boolean(subDoc?.paymentId && subDoc?.paymentId !== 'offline' && subDoc?.grantedBy !== 'admin');
 
         let amount = Number(subDoc?.amount || 0);
         if (!amount && subDoc?.plan) {
@@ -203,17 +261,27 @@ export function Admin() {
           else if (pk.includes('yearly')) amount = 3499;
         }
 
+        const subscriptionStatus = isCancelled
+          ? 'cancelled'
+          : isActive
+          ? 'active'
+          : subDoc
+          ? 'expired'
+          : 'none';
+
         return {
           uid: userDoc.id,
           email: userDoc.data().email || 'No email',
           createdAt: userDoc.data().createdAt ? getDate(userDoc.data().createdAt).toISOString() : null,
-          subscriptionStatus: isActive ? 'active' : subDoc ? 'expired' : 'none',
+          subscriptionStatus,
           plan: subDoc?.plan || '-',
           amount,
           expiresAt,
           startedAt,
           grantedBy: subDoc?.grantedBy,
           paymentId: subDoc?.paymentId,
+          orderId: subDoc?.orderId,
+          isGateway,
         };
       });
 
@@ -221,7 +289,10 @@ export function Admin() {
         totalClients: usersSnap.size,
         activeSubscriptions: activeSubDocs.length,
         totalRevenue,
+        gatewayRevenue,
+        manualRevenue,
         estimatedMRR: Math.round(estimatedMRR),
+        transactions,
         clients: clientList,
         allUsers,
         planBreakdown,
@@ -287,6 +358,83 @@ export function Admin() {
     }
   };
 
+  // Revoke / Cancel Access (Dismiss Client Access)
+  const handleRevokeAccess = async (client: ClientRecord) => {
+    const confirmed = window.confirm(
+      `DISMISS CLIENT ACCESS:\nAre you sure you want to CANCEL and REVOKE subscription access for "${client.email}" immediately?\n\nThe user will be blocked from accessing billing features.`
+    );
+    if (!confirmed) return;
+
+    try {
+      const now = new Date();
+      await setDoc(
+        doc(db, 'subscriptions', client.uid),
+        {
+          status: 'cancelled',
+          expiresAt: Timestamp.fromDate(now),
+          updatedAt: Timestamp.fromDate(now),
+        },
+        { merge: true }
+      );
+
+      setActionAlert({ text: `Subscription access cancelled and dismissed for ${client.email}.`, ok: true });
+
+      // Update local state immediately
+      setOverview((prev) => {
+        if (!prev) return prev;
+        const wasActive = client.subscriptionStatus === 'active';
+        return {
+          ...prev,
+          activeSubscriptions: Math.max(0, prev.activeSubscriptions - (wasActive ? 1 : 0)),
+          clients: prev.clients.map((c) =>
+            c.uid === client.uid ? { ...c, subscriptionStatus: 'cancelled' as const } : c
+          ),
+          transactions: prev.transactions.map((t) =>
+            t.uid === client.uid ? { ...t, status: 'cancelled' as const } : t
+          ),
+        };
+      });
+    } catch (err) {
+      console.error('Failed to revoke access:', err);
+      setActionAlert({ text: 'Failed to revoke access. Please check permissions.', ok: false });
+    }
+  };
+
+  // Permanently Delete Client Account
+  const handleDeleteClient = async (client: ClientRecord) => {
+    const confirmed = window.confirm(
+      `PERMANENT ACTION WARNING:\nAre you sure you want to completely DELETE the client account for "${client.email}"?\n\nThis will remove their user record, subscription, and shop settings from the database.`
+    );
+    if (!confirmed) return;
+
+    try {
+      await Promise.all([
+        deleteDoc(doc(db, 'users', client.uid)),
+        deleteDoc(doc(db, 'subscriptions', client.uid)),
+        deleteDoc(doc(db, 'company_settings', client.uid)).catch(() => {}),
+      ]);
+
+      setActionAlert({ text: `Client account "${client.email}" was permanently deleted.`, ok: true });
+
+      // Update local state immediately
+      setOverview((prev) => {
+        if (!prev) return prev;
+        const wasActive = client.subscriptionStatus === 'active';
+        return {
+          ...prev,
+          totalClients: Math.max(0, prev.totalClients - 1),
+          activeSubscriptions: Math.max(0, prev.activeSubscriptions - (wasActive ? 1 : 0)),
+          clients: prev.clients.filter((c) => c.uid !== client.uid),
+          allUsers: prev.allUsers.filter((u) => u.uid !== client.uid),
+          transactions: prev.transactions.filter((t) => t.uid !== client.uid),
+        };
+      });
+    } catch (err) {
+      console.error('Failed to delete client account:', err);
+      setActionAlert({ text: 'Failed to delete client account. Check permissions.', ok: false });
+    }
+  };
+
   // Toggle Message Resolution
   const handleToggleResolved = async (id: string, currentlyRead: boolean) => {
     const newStatus = !currentlyRead;
@@ -340,11 +488,25 @@ export function Admin() {
       const matchesStatus =
         clientFilter === 'all' ||
         (clientFilter === 'active' && client.subscriptionStatus === 'active') ||
+        (clientFilter === 'gateway' && client.isGateway && client.subscriptionStatus === 'active') ||
         (clientFilter === 'expired' && client.subscriptionStatus === 'expired') ||
+        (clientFilter === 'cancelled' && client.subscriptionStatus === 'cancelled') ||
         (clientFilter === 'none' && client.subscriptionStatus === 'none');
       return matchesSearch && matchesStatus;
     });
   }, [overview, clientSearch, clientFilter]);
+
+  // Filtered Overview Transactions (defaults to gateway_only)
+  const overviewTransactions = useMemo(() => {
+    if (!overview) return [];
+    if (gatewayViewFilter === 'gateway_only') {
+      return overview.transactions.filter((t) => t.isGateway);
+    }
+    if (gatewayViewFilter === 'manual') {
+      return overview.transactions.filter((t) => !t.isGateway);
+    }
+    return overview.transactions;
+  }, [overview, gatewayViewFilter]);
 
   // Filtered Messages
   const filteredMessages = useMemo(() => {
@@ -370,7 +532,7 @@ export function Admin() {
             <ShieldCheck size={14} /> Owner Control Centre
           </div>
           <h2>Admin Portal & Intelligence</h2>
-          <p>Real-time revenue tracking, subscription plan metrics, user directories, and customer messages.</p>
+          <p>Track Razorpay gateway payments, dismiss or delete users, and manage subscription access.</p>
         </div>
 
         <div className={styles.headerActions}>
@@ -386,6 +548,25 @@ export function Admin() {
         </div>
       </div>
 
+      {actionAlert && (
+        <div
+          className={
+            actionAlert.ok ? styles.statusFeedbackSuccess : styles.statusFeedbackError
+          }
+          style={{ padding: '10px 16px', borderRadius: '10px', background: actionAlert.ok ? '#ecfdf5' : '#fef2f2' }}
+        >
+          {actionAlert.ok ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+          {actionAlert.text}
+          <button
+            type="button"
+            style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'inherit' }}
+            onClick={() => setActionAlert(null)}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* 2. Navigation Tabs */}
       <div className={styles.tabs}>
         <button
@@ -393,21 +574,21 @@ export function Admin() {
           className={`${styles.tabBtn} ${activeTab === 'overview' ? styles.tabBtnActive : ''}`}
           onClick={() => setActiveTab('overview')}
         >
-          <TrendingUp size={15} /> Overview & KPIs
+          <TrendingUp size={15} /> Overview & Gateway Payments
         </button>
         <button
           type="button"
           className={`${styles.tabBtn} ${activeTab === 'revenue' ? styles.tabBtnActive : ''}`}
           onClick={() => setActiveTab('revenue')}
         >
-          <IndianRupee size={15} /> Subscriptions & Revenue
+          <IndianRupee size={15} /> Revenue & Plans Breakdown
         </button>
         <button
           type="button"
           className={`${styles.tabBtn} ${activeTab === 'clients' ? styles.tabBtnActive : ''}`}
           onClick={() => setActiveTab('clients')}
         >
-          <UsersRound size={15} /> Clients Directory ({overview?.totalClients || 0})
+          <UsersRound size={15} /> Clients & Access Management ({overview?.totalClients || 0})
         </button>
         <button
           type="button"
@@ -433,32 +614,47 @@ export function Admin() {
       )}
 
       {loading ? (
-        <div className="page-loader">Loading secure admin data and revenue streams...</div>
+        <div className="page-loader">Loading secure admin data and payment gateway logs...</div>
       ) : overview && (
         <>
-          {/* TAB 1: OVERVIEW & KEY PERFORMANCE CARDS */}
+          {/* TAB 1: OVERVIEW & PAYMENT GATEWAY TRANSACTIONS */}
           {activeTab === 'overview' && (
             <>
               {/* Top 4 KPI Cards */}
               <section className={styles.statsGrid}>
-                {/* Card 1: Total Revenue */}
+                {/* Card 1: Gateway Verified Revenue */}
+                <article className={styles.metricCard}>
+                  <div className={styles.metricTop}>
+                    <div className={`${styles.metricIcon} ${styles.iconRevenue}`}>
+                      <CreditCard size={22} />
+                    </div>
+                    <span className={`${styles.metricPill} ${styles.metricPillPositive}`}>
+                      ✓ Razorpay Verified
+                    </span>
+                  </div>
+                  <div className={styles.metricBottom}>
+                    <span className={styles.metricLabel}>Payment Gateway Revenue</span>
+                    <strong className={styles.metricValue}>{currency(overview.gatewayRevenue)}</strong>
+                    <span className={styles.metricSubtext}>Paid directly through online payment gateway</span>
+                  </div>
+                </article>
+
+                {/* Card 2: Total Revenue */}
                 <article className={styles.metricCard}>
                   <div className={styles.metricTop}>
                     <div className={`${styles.metricIcon} ${styles.iconRevenue}`}>
                       <IndianRupee size={22} />
                     </div>
-                    <span className={`${styles.metricPill} ${styles.metricPillPositive}`}>
-                      Lifetime Total
-                    </span>
+                    <span className={styles.metricPill}>All Sources</span>
                   </div>
                   <div className={styles.metricBottom}>
-                    <span className={styles.metricLabel}>Total Revenue</span>
+                    <span className={styles.metricLabel}>Total Lifetime Revenue</span>
                     <strong className={styles.metricValue}>{currency(overview.totalRevenue)}</strong>
-                    <span className={styles.metricSubtext}>Across all plans & manual grants</span>
+                    <span className={styles.metricSubtext}>Gateway ({currency(overview.gatewayRevenue)}) + Manual ({currency(overview.manualRevenue)})</span>
                   </div>
                 </article>
 
-                {/* Card 2: Active Subscriptions */}
+                {/* Card 3: Active Subscriptions */}
                 <article className={styles.metricCard}>
                   <div className={styles.metricTop}>
                     <div className={`${styles.metricIcon} ${styles.iconSubscribers}`}>
@@ -473,51 +669,177 @@ export function Admin() {
                   </div>
                 </article>
 
-                {/* Card 3: Total Clients */}
+                {/* Card 4: Total Registered Accounts */}
                 <article className={styles.metricCard}>
                   <div className={styles.metricTop}>
                     <div className={`${styles.metricIcon} ${styles.iconUsers}`}>
                       <UsersRound size={22} />
                     </div>
-                    <span className={styles.metricPill}>Registered Users</span>
-                  </div>
-                  <div className={styles.metricBottom}>
-                    <span className={styles.metricLabel}>Total Clients</span>
-                    <strong className={styles.metricValue}>{overview.totalClients}</strong>
-                    <span className={styles.metricSubtext}>Shops & wholesale accounts registered</span>
-                  </div>
-                </article>
-
-                {/* Card 4: Paid Conversion Rate */}
-                <article className={styles.metricCard}>
-                  <div className={styles.metricTop}>
-                    <div className={`${styles.metricIcon} ${styles.iconRate}`}>
-                      <TrendingUp size={22} />
-                    </div>
                     <span className={styles.metricPill}>
                       {overview.totalClients > 0
-                        ? `${((overview.activeSubscriptions / overview.totalClients) * 100).toFixed(1)}%`
+                        ? `${((overview.activeSubscriptions / overview.totalClients) * 100).toFixed(1)}% Active`
                         : '0%'}
                     </span>
                   </div>
                   <div className={styles.metricBottom}>
-                    <span className={styles.metricLabel}>Conversion Rate</span>
-                    <strong className={styles.metricValue}>
-                      {overview.totalClients > 0
-                        ? `${((overview.activeSubscriptions / overview.totalClients) * 100).toFixed(1)}%`
-                        : '0%'}
-                    </strong>
-                    <span className={styles.metricSubtext}>Active paying vs total registered</span>
+                    <span className={styles.metricLabel}>Total Clients Registered</span>
+                    <strong className={styles.metricValue}>{overview.totalClients}</strong>
+                    <span className={styles.metricSubtext}>Registered shop and wholesale owners</span>
                   </div>
                 </article>
               </section>
 
-              {/* Subscription Plans Breakdown in Cards */}
+              {/* DEDICATED OVERVIEW CARD: SUCCESSFUL PAYMENT GATEWAY TRANSACTIONS */}
               <section className={styles.card}>
                 <div className={styles.cardHeader}>
                   <div>
-                    <h3>Subscription Plans Performance & Revenue</h3>
-                    <p>Breakdown of revenue earned, subscriber counts, and market share by plan.</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span className={styles.badgeGateway}>
+                        <Zap size={13} /> Razorpay Gateway
+                      </span>
+                      <h3>Successful Payment Gateway Transactions</h3>
+                    </div>
+                    <p>Verified payments processed through the online payment gateway with payment IDs and order verification.</p>
+                  </div>
+
+                  {/* Filter Pills to isolate Gateway vs All */}
+                  <div className={styles.filterPills}>
+                    <button
+                      type="button"
+                      className={`${styles.filterPill} ${
+                        gatewayViewFilter === 'gateway_only' ? styles.filterPillActive : ''
+                      }`}
+                      onClick={() => setGatewayViewFilter('gateway_only')}
+                    >
+                      ⚡ Gateway Only ({overview.transactions.filter((t) => t.isGateway).length})
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.filterPill} ${
+                        gatewayViewFilter === 'manual' ? styles.filterPillActive : ''
+                      }`}
+                      onClick={() => setGatewayViewFilter('manual')}
+                    >
+                      ✍️ Manual Grants ({overview.transactions.filter((t) => !t.isGateway).length})
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.filterPill} ${
+                        gatewayViewFilter === 'all' ? styles.filterPillActive : ''
+                      }`}
+                      onClick={() => setGatewayViewFilter('all')}
+                    >
+                      All Transactions ({overview.transactions.length})
+                    </button>
+                  </div>
+                </div>
+
+                <div className="table-scroll">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Payment ID / Channel</th>
+                        <th>Order ID</th>
+                        <th>Customer Email</th>
+                        <th>Plan</th>
+                        <th>Amount Paid</th>
+                        <th>Date & Time</th>
+                        <th>Gateway Status</th>
+                        <th style={{ textAlign: 'right' }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {overviewTransactions.map((tx) => {
+                        const clientRecord = overview.clients.find((c) => c.uid === tx.uid);
+                        return (
+                          <tr key={tx.id}>
+                            <td>
+                              {tx.isGateway ? (
+                                <span className={styles.badgeGateway} title="Verified Razorpay Transaction">
+                                  <CreditCard size={12} /> {tx.paymentId || 'Verified'}
+                                </span>
+                              ) : (
+                                <span className={styles.badgeManual}>
+                                  <Edit2 size={12} /> Offline / Admin
+                                </span>
+                              )}
+                            </td>
+                            <td>
+                              <span className={styles.paymentIdPill}>
+                                {tx.orderId || '-'}
+                              </span>
+                            </td>
+                            <td>
+                              <strong>{tx.email}</strong>
+                            </td>
+                            <td>{tx.plan}</td>
+                            <td>
+                              <strong style={{ color: '#059669', fontSize: '14px' }}>
+                                {currency(tx.amount)}
+                              </strong>
+                            </td>
+                            <td>{tx.date.toLocaleString('en-IN')}</td>
+                            <td>
+                              <span
+                                className={`${styles.badgeStatus} ${
+                                  tx.status === 'active'
+                                    ? styles.statusActive
+                                    : tx.status === 'cancelled'
+                                    ? styles.statusCancelled
+                                    : styles.statusExpired
+                                }`}
+                              >
+                                {tx.status === 'active' && <Check size={12} />}
+                                {tx.status === 'cancelled' ? 'Cancelled / Dismissed' : tx.status}
+                              </span>
+                            </td>
+                            <td style={{ textAlign: 'right' }}>
+                              {clientRecord && (
+                                <div className={styles.clientActions}>
+                                  {clientRecord.subscriptionStatus === 'active' && (
+                                    <button
+                                      type="button"
+                                      className={styles.btnRevoke}
+                                      onClick={() => handleRevokeAccess(clientRecord)}
+                                      title="Revoke / Cancel access immediately"
+                                    >
+                                      <Ban size={12} /> Dismiss Access
+                                    </button>
+                                  )}
+                                  <button
+                                    type="button"
+                                    className={styles.btnDeleteClient}
+                                    onClick={() => handleDeleteClient(clientRecord)}
+                                    title="Delete client account"
+                                  >
+                                    <Trash2 size={12} /> Delete
+                                  </button>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {!overviewTransactions.length && (
+                        <tr>
+                          <td colSpan={8} className="empty-cell">
+                            {gatewayViewFilter === 'gateway_only'
+                              ? 'No online gateway transactions processed yet. Successful online payments through Razorpay will be automatically captured here.'
+                              : 'No transactions found for this filter.'}
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+
+              {/* Plans Performance Cards */}
+              <section className={styles.card}>
+                <div className={styles.cardHeader}>
+                  <div>
+                    <h3>Subscription Plans Market Share</h3>
+                    <p>Subscribers and revenue generated across all plan offerings.</p>
                   </div>
                   <div style={{ fontSize: '13px', color: '#64748b' }}>
                     Est. MRR: <strong style={{ color: '#09090b', fontSize: '15px' }}>{currency(overview.estimatedMRR)}</strong>/mo
@@ -534,7 +856,6 @@ export function Admin() {
                         <span className={styles.planPrice}>₹499 / month</span>
                       </div>
                     </div>
-
                     <div className={styles.planStats}>
                       <div className={styles.planStatRow}>
                         <span>Active Subscribers</span>
@@ -551,29 +872,6 @@ export function Admin() {
                         </strong>
                       </div>
                     </div>
-
-                    <div className={styles.shareBarWrapper}>
-                      <div className={styles.shareBarMeta}>
-                        <span>Revenue Share</span>
-                        <span>
-                          {overview.totalRevenue > 0
-                            ? `${((overview.planBreakdown.monthly.revenue / overview.totalRevenue) * 100).toFixed(1)}%`
-                            : '0%'}
-                        </span>
-                      </div>
-                      <div className={styles.shareBar}>
-                        <div
-                          className={styles.shareBarFill}
-                          style={{
-                            width: `${
-                              overview.totalRevenue > 0
-                                ? (overview.planBreakdown.monthly.revenue / overview.totalRevenue) * 100
-                                : 0
-                            }%`,
-                          }}
-                        />
-                      </div>
-                    </div>
                   </article>
 
                   {/* 6 Months Plan Card */}
@@ -585,7 +883,6 @@ export function Admin() {
                         <span className={styles.planPrice}>₹2,499 / 6 months</span>
                       </div>
                     </div>
-
                     <div className={styles.planStats}>
                       <div className={styles.planStatRow}>
                         <span>Active Subscribers</span>
@@ -602,29 +899,6 @@ export function Admin() {
                         </strong>
                       </div>
                     </div>
-
-                    <div className={styles.shareBarWrapper}>
-                      <div className={styles.shareBarMeta}>
-                        <span>Revenue Share</span>
-                        <span>
-                          {overview.totalRevenue > 0
-                            ? `${((overview.planBreakdown.half_yearly.revenue / overview.totalRevenue) * 100).toFixed(1)}%`
-                            : '0%'}
-                        </span>
-                      </div>
-                      <div className={styles.shareBar}>
-                        <div
-                          className={styles.shareBarFill}
-                          style={{
-                            width: `${
-                              overview.totalRevenue > 0
-                                ? (overview.planBreakdown.half_yearly.revenue / overview.totalRevenue) * 100
-                                : 0
-                            }%`,
-                          }}
-                        />
-                      </div>
-                    </div>
                   </article>
 
                   {/* Yearly Plan Card (Featured) */}
@@ -637,7 +911,6 @@ export function Admin() {
                       </div>
                       <Crown size={20} color="#6366f1" />
                     </div>
-
                     <div className={styles.planStats}>
                       <div className={styles.planStatRow}>
                         <span>Active Subscribers</span>
@@ -654,29 +927,6 @@ export function Admin() {
                         </strong>
                       </div>
                     </div>
-
-                    <div className={styles.shareBarWrapper}>
-                      <div className={styles.shareBarMeta}>
-                        <span>Revenue Share</span>
-                        <span>
-                          {overview.totalRevenue > 0
-                            ? `${((overview.planBreakdown.yearly.revenue / overview.totalRevenue) * 100).toFixed(1)}%`
-                            : '0%'}
-                        </span>
-                      </div>
-                      <div className={styles.shareBar}>
-                        <div
-                          className={styles.shareBarFill}
-                          style={{
-                            width: `${
-                              overview.totalRevenue > 0
-                                ? (overview.planBreakdown.yearly.revenue / overview.totalRevenue) * 100
-                                : 0
-                            }%`,
-                          }}
-                        />
-                      </div>
-                    </div>
                   </article>
 
                   {/* Manual / Direct Grants Card */}
@@ -688,7 +938,6 @@ export function Admin() {
                         <span className={styles.planPrice}>Recorded Admin Payments</span>
                       </div>
                     </div>
-
                     <div className={styles.planStats}>
                       <div className={styles.planStatRow}>
                         <span>Active Grants</span>
@@ -705,110 +954,13 @@ export function Admin() {
                         </strong>
                       </div>
                     </div>
-
-                    <div className={styles.shareBarWrapper}>
-                      <div className={styles.shareBarMeta}>
-                        <span>Revenue Share</span>
-                        <span>
-                          {overview.totalRevenue > 0
-                            ? `${((overview.planBreakdown.manual.revenue / overview.totalRevenue) * 100).toFixed(1)}%`
-                            : '0%'}
-                        </span>
-                      </div>
-                      <div className={styles.shareBar}>
-                        <div
-                          className={styles.shareBarFill}
-                          style={{
-                            width: `${
-                              overview.totalRevenue > 0
-                                ? (overview.planBreakdown.manual.revenue / overview.totalRevenue) * 100
-                                : 0
-                            }%`,
-                          }}
-                        />
-                      </div>
-                    </div>
                   </article>
-                </div>
-              </section>
-
-              {/* Recent Registrations Card */}
-              <section className={styles.card}>
-                <div className={styles.cardHeader}>
-                  <div>
-                    <h3>Recent Client Accounts</h3>
-                    <p>Latest registered shop owners and their current subscription status.</p>
-                  </div>
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    style={{ fontSize: '12.5px', padding: '6px 14px' }}
-                    onClick={() => setActiveTab('clients')}
-                  >
-                    View All Clients Directory
-                  </button>
-                </div>
-
-                <div className="table-scroll">
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>User Email</th>
-                        <th>Registered Date</th>
-                        <th>Subscription Status</th>
-                        <th>Plan Details</th>
-                        <th style={{ textAlign: 'right' }}>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {overview.clients.slice(0, 8).map((client) => (
-                        <tr key={client.uid}>
-                          <td>
-                            <strong>{client.email}</strong>
-                          </td>
-                          <td>
-                            {client.createdAt
-                              ? new Date(client.createdAt).toLocaleDateString('en-IN')
-                              : '-'}
-                          </td>
-                          <td>
-                            <span
-                              className={`${styles.badgeStatus} ${
-                                client.subscriptionStatus === 'active'
-                                  ? styles.statusActive
-                                  : client.subscriptionStatus === 'expired'
-                                  ? styles.statusExpired
-                                  : styles.statusNone
-                              }`}
-                            >
-                              {client.subscriptionStatus === 'active' && <Check size={12} />}
-                              {client.subscriptionStatus}
-                            </span>
-                          </td>
-                          <td>{client.plan}</td>
-                          <td style={{ textAlign: 'right' }}>
-                            <button
-                              type="button"
-                              className="secondary-button"
-                              style={{ padding: '5px 12px', fontSize: '12px' }}
-                              onClick={() => {
-                                setGrantEmail(client.email);
-                                setActiveTab('revenue');
-                              }}
-                            >
-                              <Edit2 size={13} /> Edit Access
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
                 </div>
               </section>
             </>
           )}
 
-          {/* TAB 2: SUBSCRIPTIONS, REVENUE & MANUAL GRANT */}
+          {/* TAB 2: REVENUE, PLANS & GRANT ACCESS */}
           {activeTab === 'revenue' && (
             <>
               {/* Financial Deep Dive Cards */}
@@ -816,14 +968,28 @@ export function Admin() {
                 <article className={styles.metricCard}>
                   <div className={styles.metricTop}>
                     <div className={`${styles.metricIcon} ${styles.iconRevenue}`}>
+                      <CreditCard size={22} />
+                    </div>
+                    <span className={`${styles.metricPill} ${styles.metricPillPositive}`}>Online</span>
+                  </div>
+                  <div className={styles.metricBottom}>
+                    <span className={styles.metricLabel}>Gateway Verified Revenue</span>
+                    <strong className={styles.metricValue}>{currency(overview.gatewayRevenue)}</strong>
+                    <span className={styles.metricSubtext}>Direct Razorpay payment captures</span>
+                  </div>
+                </article>
+
+                <article className={styles.metricCard}>
+                  <div className={styles.metricTop}>
+                    <div className={`${styles.metricIcon} ${styles.iconRevenue}`}>
                       <IndianRupee size={22} />
                     </div>
-                    <span className={`${styles.metricPill} ${styles.metricPillPositive}`}>Gross</span>
+                    <span className={styles.metricPill}>Combined</span>
                   </div>
                   <div className={styles.metricBottom}>
                     <span className={styles.metricLabel}>Total Lifetime Revenue</span>
                     <strong className={styles.metricValue}>{currency(overview.totalRevenue)}</strong>
-                    <span className={styles.metricSubtext}>Directly collected across all channels</span>
+                    <span className={styles.metricSubtext}>Across all channels and manual grants</span>
                   </div>
                 </article>
 
@@ -832,46 +998,26 @@ export function Admin() {
                     <div className={`${styles.metricIcon} ${styles.iconSubscribers}`}>
                       <Calendar size={22} />
                     </div>
-                    <span className={styles.metricPill}>Normalized</span>
+                    <span className={styles.metricPill}>Monthly</span>
                   </div>
                   <div className={styles.metricBottom}>
-                    <span className={styles.metricLabel}>Estimated Monthly Recurring (MRR)</span>
+                    <span className={styles.metricLabel}>Estimated MRR</span>
                     <strong className={styles.metricValue}>{currency(overview.estimatedMRR)}</strong>
-                    <span className={styles.metricSubtext}>Based on currently active licenses</span>
-                  </div>
-                </article>
-
-                <article className={styles.metricCard}>
-                  <div className={styles.metricTop}>
-                    <div className={`${styles.metricIcon} ${styles.iconUsers}`}>
-                      <CreditCard size={22} />
-                    </div>
-                    <span className={styles.metricPill}>ARPU</span>
-                  </div>
-                  <div className={styles.metricBottom}>
-                    <span className={styles.metricLabel}>Avg Revenue Per Subscriber</span>
-                    <strong className={styles.metricValue}>
-                      {currency(
-                        overview.activeSubscriptions > 0
-                          ? Math.round(overview.totalRevenue / overview.activeSubscriptions)
-                          : 0
-                      )}
-                    </strong>
-                    <span className={styles.metricSubtext}>Across active subscribed accounts</span>
+                    <span className={styles.metricSubtext}>Normalized monthly recurring value</span>
                   </div>
                 </article>
 
                 <article className={styles.metricCard}>
                   <div className={styles.metricTop}>
                     <div className={`${styles.metricIcon} ${styles.iconRate}`}>
-                      <Clock size={22} />
+                      <Crown size={22} />
                     </div>
-                    <span className={styles.metricPill}>Coverage</span>
+                    <span className={styles.metricPill}>Active</span>
                   </div>
                   <div className={styles.metricBottom}>
                     <span className={styles.metricLabel}>Active Subscriptions</span>
                     <strong className={styles.metricValue}>{overview.activeSubscriptions}</strong>
-                    <span className={styles.metricSubtext}>Active paying shop licenses</span>
+                    <span className={styles.metricSubtext}>Paying shop workspaces</span>
                   </div>
                 </article>
               </section>
@@ -957,137 +1103,16 @@ export function Admin() {
                   </div>
                 </form>
               </section>
-
-              {/* Plans Performance Grid */}
-              <section className={styles.card}>
-                <div className={styles.cardHeader}>
-                  <div>
-                    <h3>All Subscription Plans</h3>
-                    <p>Performance comparison and revenue captured per plan tier.</p>
-                  </div>
-                </div>
-
-                <div className={styles.planGrid}>
-                  {/* Monthly Plan */}
-                  <article className={styles.planCard}>
-                    <div className={styles.planCardHeader}>
-                      <div>
-                        <span className={styles.planTag}>Tier 1</span>
-                        <h4 className={styles.planName}>Monthly Plan</h4>
-                        <span className={styles.planPrice}>₹499 / month</span>
-                      </div>
-                    </div>
-                    <div className={styles.planStats}>
-                      <div className={styles.planStatRow}>
-                        <span>Active Accounts</span>
-                        <strong>{overview.planBreakdown.monthly.activeCount}</strong>
-                      </div>
-                      <div className={styles.planStatRow}>
-                        <span>Total Purchases</span>
-                        <strong>{overview.planBreakdown.monthly.totalCount}</strong>
-                      </div>
-                      <div className={styles.planStatRow}>
-                        <span>Revenue Earned</span>
-                        <strong className={styles.planRevenueHighlight}>
-                          {currency(overview.planBreakdown.monthly.revenue)}
-                        </strong>
-                      </div>
-                    </div>
-                  </article>
-
-                  {/* 6 Months Plan */}
-                  <article className={styles.planCard}>
-                    <div className={styles.planCardHeader}>
-                      <div>
-                        <span className={styles.planTag}>Tier 2</span>
-                        <h4 className={styles.planName}>6 Months Plan</h4>
-                        <span className={styles.planPrice}>₹2,499 / 6 months</span>
-                      </div>
-                    </div>
-                    <div className={styles.planStats}>
-                      <div className={styles.planStatRow}>
-                        <span>Active Accounts</span>
-                        <strong>{overview.planBreakdown.half_yearly.activeCount}</strong>
-                      </div>
-                      <div className={styles.planStatRow}>
-                        <span>Total Purchases</span>
-                        <strong>{overview.planBreakdown.half_yearly.totalCount}</strong>
-                      </div>
-                      <div className={styles.planStatRow}>
-                        <span>Revenue Earned</span>
-                        <strong className={styles.planRevenueHighlight}>
-                          {currency(overview.planBreakdown.half_yearly.revenue)}
-                        </strong>
-                      </div>
-                    </div>
-                  </article>
-
-                  {/* Yearly Plan */}
-                  <article className={`${styles.planCard} ${styles.planCardFeatured}`}>
-                    <div className={styles.planCardHeader}>
-                      <div>
-                        <span className={styles.planTag}>Tier 3 · Most Popular</span>
-                        <h4 className={styles.planName}>Yearly Plan</h4>
-                        <span className={styles.planPrice}>₹3,499 / year</span>
-                      </div>
-                      <Crown size={20} color="#6366f1" />
-                    </div>
-                    <div className={styles.planStats}>
-                      <div className={styles.planStatRow}>
-                        <span>Active Accounts</span>
-                        <strong>{overview.planBreakdown.yearly.activeCount}</strong>
-                      </div>
-                      <div className={styles.planStatRow}>
-                        <span>Total Purchases</span>
-                        <strong>{overview.planBreakdown.yearly.totalCount}</strong>
-                      </div>
-                      <div className={styles.planStatRow}>
-                        <span>Revenue Earned</span>
-                        <strong className={styles.planRevenueHighlight}>
-                          {currency(overview.planBreakdown.yearly.revenue)}
-                        </strong>
-                      </div>
-                    </div>
-                  </article>
-
-                  {/* Manual Offline */}
-                  <article className={styles.planCard}>
-                    <div className={styles.planCardHeader}>
-                      <div>
-                        <span className={styles.planTag}>Offline</span>
-                        <h4 className={styles.planName}>Direct Grants</h4>
-                        <span className={styles.planPrice}>Recorded Admin Payments</span>
-                      </div>
-                    </div>
-                    <div className={styles.planStats}>
-                      <div className={styles.planStatRow}>
-                        <span>Active Accounts</span>
-                        <strong>{overview.planBreakdown.manual.activeCount}</strong>
-                      </div>
-                      <div className={styles.planStatRow}>
-                        <span>Total Purchases</span>
-                        <strong>{overview.planBreakdown.manual.totalCount}</strong>
-                      </div>
-                      <div className={styles.planStatRow}>
-                        <span>Revenue Earned</span>
-                        <strong className={styles.planRevenueHighlight}>
-                          {currency(overview.planBreakdown.manual.revenue)}
-                        </strong>
-                      </div>
-                    </div>
-                  </article>
-                </div>
-              </section>
             </>
           )}
 
-          {/* TAB 3: CLIENTS DIRECTORY */}
+          {/* TAB 3: CLIENTS & ACCESS MANAGEMENT (DISMISS / DELETE / REVOKE) */}
           {activeTab === 'clients' && (
             <section className={styles.card}>
               <div className={styles.cardHeader}>
                 <div>
-                  <h3>Clients Directory & Subscription Status</h3>
-                  <p>Comprehensive list of registered accounts with their license validity.</p>
+                  <h3>Clients Directory & User Access Control</h3>
+                  <p>Dismiss or revoke user access, delete accounts permanently, or edit subscription grants.</p>
                 </div>
               </div>
 
@@ -1103,7 +1128,7 @@ export function Admin() {
                 </label>
 
                 <div className={styles.filterPills}>
-                  {(['all', 'active', 'expired', 'none'] as const).map((filter) => (
+                  {(['all', 'active', 'gateway', 'expired', 'cancelled', 'none'] as const).map((filter) => (
                     <button
                       type="button"
                       key={filter}
@@ -1116,8 +1141,12 @@ export function Admin() {
                         ? `All (${overview.clients.length})`
                         : filter === 'active'
                         ? `Active (${overview.clients.filter((c) => c.subscriptionStatus === 'active').length})`
+                        : filter === 'gateway'
+                        ? `Gateway Verified (${overview.clients.filter((c) => c.isGateway && c.subscriptionStatus === 'active').length})`
                         : filter === 'expired'
                         ? `Expired (${overview.clients.filter((c) => c.subscriptionStatus === 'expired').length})`
+                        : filter === 'cancelled'
+                        ? `Dismissed / Cancelled (${overview.clients.filter((c) => c.subscriptionStatus === 'cancelled').length})`
                         : `No Plan (${overview.clients.filter((c) => c.subscriptionStatus === 'none').length})`}
                     </button>
                   ))}
@@ -1132,10 +1161,11 @@ export function Admin() {
                       <th>Client Email</th>
                       <th>Registered On</th>
                       <th>Status</th>
-                      <th>Plan Name</th>
-                      <th>Expires At</th>
-                      <th>Recorded Paid</th>
-                      <th style={{ textAlign: 'right' }}>Actions</th>
+                      <th>Payment Source</th>
+                      <th>Plan Details</th>
+                      <th>Valid Until</th>
+                      <th>Amount</th>
+                      <th style={{ textAlign: 'right' }}>Admin Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1154,14 +1184,29 @@ export function Admin() {
                             className={`${styles.badgeStatus} ${
                               client.subscriptionStatus === 'active'
                                 ? styles.statusActive
+                                : client.subscriptionStatus === 'cancelled'
+                                ? styles.statusCancelled
                                 : client.subscriptionStatus === 'expired'
                                 ? styles.statusExpired
                                 : styles.statusNone
                             }`}
                           >
                             {client.subscriptionStatus === 'active' && <Check size={12} />}
-                            {client.subscriptionStatus}
+                            {client.subscriptionStatus === 'cancelled' ? 'Dismissed / Cancelled' : client.subscriptionStatus}
                           </span>
+                        </td>
+                        <td>
+                          {client.isGateway ? (
+                            <span className={styles.badgeGateway} title={`Razorpay ID: ${client.paymentId}`}>
+                              <CreditCard size={11} /> Gateway Verified
+                            </span>
+                          ) : client.subscriptionStatus !== 'none' ? (
+                            <span className={styles.badgeManual}>
+                              <Edit2 size={11} /> Offline Admin
+                            </span>
+                          ) : (
+                            <span style={{ color: '#94a3b8' }}>-</span>
+                          )}
                         </td>
                         <td>{client.plan}</td>
                         <td>
@@ -1177,24 +1222,50 @@ export function Admin() {
                           )}
                         </td>
                         <td style={{ textAlign: 'right' }}>
-                          <button
-                            type="button"
-                            className="secondary-button"
-                            style={{ padding: '5px 12px', fontSize: '12px' }}
-                            onClick={() => {
-                              setGrantEmail(client.email);
-                              setActiveTab('revenue');
-                              window.scrollTo({ top: 0, behavior: 'smooth' });
-                            }}
-                          >
-                            <Edit2 size={13} /> Edit Access
-                          </button>
+                          <div className={styles.clientActions}>
+                            {/* Edit / Extend Access */}
+                            <button
+                              type="button"
+                              className="secondary-button"
+                              style={{ padding: '5px 10px', fontSize: '11.5px' }}
+                              onClick={() => {
+                                setGrantEmail(client.email);
+                                setActiveTab('revenue');
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                              }}
+                              title="Edit subscription duration or record payment"
+                            >
+                              <Edit2 size={12} /> Edit
+                            </button>
+
+                            {/* Dismiss / Revoke Access */}
+                            {client.subscriptionStatus === 'active' && (
+                              <button
+                                type="button"
+                                className={styles.btnRevoke}
+                                onClick={() => handleRevokeAccess(client)}
+                                title="Dismiss client and cancel subscription access immediately"
+                              >
+                                <Ban size={12} /> Dismiss Access
+                              </button>
+                            )}
+
+                            {/* Delete Client Permanently */}
+                            <button
+                              type="button"
+                              className={styles.btnDeleteClient}
+                              onClick={() => handleDeleteClient(client)}
+                              title="Permanently delete client account from database"
+                            >
+                              <Trash2 size={12} /> Delete
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
                     {!filteredClients.length && (
                       <tr>
-                        <td colSpan={7} className="empty-cell">
+                        <td colSpan={8} className="empty-cell">
                           No client accounts match your search filter.
                         </td>
                       </tr>
