@@ -2,14 +2,18 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Checks if the user is logged in
+    // Checks if the user is authenticated
     function isAuthenticated() {
       return request.auth != null;
     }
     
-    // Admin check (the owner email)
+    // Checks if the user is an Administrator / Owner
     function isAdmin() {
-      return isAuthenticated() && request.auth.token.email == 'thegopichand@gmail.com';
+      return isAuthenticated() && (
+        request.auth.token.email == 'thegopichand@gmail.com' ||
+        request.auth.token.email == 'maramnagaprasad1992@gmail.com' ||
+        request.auth.token.admin == true
+      );
     }
     
     // Checks if the document belongs to the currently logged in user
@@ -22,68 +26,56 @@ service cloud.firestore {
       return isAuthenticated() && request.resource.data.userId == request.auth.uid;
     }
 
-    // Plan validity only. Shop records stay stored after expiry.
-    function hasActiveSubscription() {
-      let path = /databases/$(database)/documents/subscriptions/$(request.auth.uid);
-      return exists(path) && get(path).data.expiresAt is timestamp && get(path).data.expiresAt > request.time;
-    }
-
-    function canUseShopData() {
-      return hasActiveSubscription() || isAdmin();
-    }
-
-    // Settings Collection
+    // 1. Company Settings Collection (User owns their record; Admin has full access to read/write/delete)
     match /company_settings/{settingId} {
-      allow read, write: if isAuthenticated() && request.auth.uid == settingId;
+      allow read, write: if (isAuthenticated() && request.auth.uid == settingId) || isAdmin();
     }
     
-    // Products Collection
+    // 2. Products Collection (Owner or Admin)
     match /products/{productId} {
-      allow read, update, delete: if isOwner();
-      allow create: if isCreatingWithOwnerId();
+      allow read, update, delete: if isOwner() || isAdmin();
+      allow create: if isCreatingWithOwnerId() || isAdmin();
     }
     
-    // Invoices / Bills Collection
+    // 3. Invoices / Bills Collection (Owner or Admin)
     match /invoices/{invoiceId} {
-      allow read, update, delete: if isOwner();
-      allow create: if isCreatingWithOwnerId();
+      allow read, update, delete: if isOwner() || isAdmin();
+      allow create: if isCreatingWithOwnerId() || isAdmin();
     }
     match /bills/{billId} {
-      allow read, update, delete: if isOwner();
-      allow create: if isCreatingWithOwnerId();
+      allow read, update, delete: if isOwner() || isAdmin();
+      allow create: if isCreatingWithOwnerId() || isAdmin();
     }
     
-    // Orders Collection
+    // 4. Orders Collection (Owner or Admin)
     match /orders/{orderId} {
-      allow read, update, delete: if isOwner();
-      allow create: if isCreatingWithOwnerId();
+      allow read, update, delete: if isOwner() || isAdmin();
+      allow create: if isCreatingWithOwnerId() || isAdmin();
     }
     
-    // Customers Collection
+    // 5. Customers Collection (Owner or Admin)
     match /customers/{customerId} {
-      allow read, update, delete: if isOwner();
-      allow create: if isCreatingWithOwnerId();
+      allow read, update, delete: if isOwner() || isAdmin();
+      allow create: if isCreatingWithOwnerId() || isAdmin();
     }
     
-    // Users Collection (Users can only read/write their own record, Admin can read all)
+    // 6. Users Collection (User can manage their own profile; Admin can read, write, update, and DELETE client accounts)
     match /users/{userId} {
-      allow read, write: if isAuthenticated() && request.auth.uid == userId;
-      allow read: if isAdmin();
+      allow read, write: if (isAuthenticated() && request.auth.uid == userId) || isAdmin();
     }
     
-    // Subscriptions Collection (Users can read/write their own)
+    // 7. Subscriptions Collection (User can read/write their own; Admin can read, write, update, and DELETE)
     match /subscriptions/{userId} {
-      allow read, write: if isAuthenticated() && request.auth.uid == userId;
-      allow read, write: if isAdmin();
+      allow read, write: if (isAuthenticated() && request.auth.uid == userId) || isAdmin();
     }
     
-    // Contact Messages Collection (Visitors can create, Admin can read/write)
+    // 8. Contact Messages Collection (Visitors can submit inquiries; Admin can read, resolve, and DELETE messages)
     match /contact_messages/{messageId} {
       allow create: if true;
-      allow read, write: if isAdmin();
+      allow read, write, delete: if isAdmin();
     }
 
-    // Site Settings (Public read for contact notice, Admin can write)
+    // 9. Site Settings (Public read for announcements/notices; Admin can write)
     match /site_settings/{settingId} {
       allow read: if true;
       allow write: if isAdmin();
