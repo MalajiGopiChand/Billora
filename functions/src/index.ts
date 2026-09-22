@@ -24,7 +24,7 @@ const requireAdmin = (admin: boolean | undefined) => { if (!admin) throw new Htt
 
 function expiryFrom(start: Date, months: number) { const expiry = new Date(start); expiry.setMonth(expiry.getMonth() + months); return expiry; }
 
-export const createSubscriptionOrder = onCall({ region, secrets: [razorpayKeyId, razorpayKeySecret] }, async (request) => {
+export const createSubscriptionOrder = onCall({ region, cors: true, secrets: [razorpayKeyId, razorpayKeySecret] }, async (request) => {
   const uid = requireUser(request.auth?.uid);
   const planId = request.data?.plan as PlanId;
   if (!Object.hasOwn(plans, planId)) throw new HttpsError('invalid-argument', 'Choose a valid subscription plan.');
@@ -54,7 +54,7 @@ export const createSubscriptionOrder = onCall({ region, secrets: [razorpayKeyId,
   }
 });
 
-export const verifySubscriptionPayment = onCall({ region, secrets: [razorpayKeyId, razorpayKeySecret] }, async (request) => {
+export const verifySubscriptionPayment = onCall({ region, cors: true, secrets: [razorpayKeyId, razorpayKeySecret] }, async (request) => {
   const uid = requireUser(request.auth?.uid);
   const { orderId, paymentId, signature } = request.data || {} as Record<string, string>;
   if (!orderId || !paymentId || !signature) throw new HttpsError('invalid-argument', 'Incomplete payment verification data.');
@@ -76,7 +76,7 @@ export const verifySubscriptionPayment = onCall({ region, secrets: [razorpayKeyI
   return { active: true, expiresAt: expiresAt.toISOString() };
 });
 
-export const grantComplimentaryAccess = onCall({ region }, async (request) => {
+export const grantComplimentaryAccess = onCall({ region, cors: true }, async (request) => {
   requireAdmin(request.auth?.token.admin as boolean | undefined);
   const { email, password, months = 12 } = request.data || {} as { email: string; password: string; months?: number };
   if (!email || !password || password.length < 6) throw new HttpsError('invalid-argument', 'Enter an email and a password of at least six characters.');
@@ -86,7 +86,7 @@ export const grantComplimentaryAccess = onCall({ region }, async (request) => {
   return { uid: account.uid, expiresAt: expiresAt.toISOString() };
 });
 
-export const getAdminOverview = onCall({ region }, async (request) => {
+export const getAdminOverview = onCall({ region, cors: true }, async (request) => {
   requireAdmin(request.auth?.token.admin as boolean | undefined);
   const [users, subscriptions, invoices] = await Promise.all([adminDb.collection('users').get(), adminDb.collection('subscriptions').get(), adminDb.collection('invoices').get()]);
   const now = new Date(); const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()); const startMonth = new Date(now.getFullYear(), now.getMonth(), 1);
