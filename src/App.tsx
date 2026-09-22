@@ -63,6 +63,7 @@ export default function App() {
     <Route path="/register" element={<GuestOnly><Register /></GuestOnly>} />
     <Route path="/subscription" element={<AuthenticatedOnly><Subscription /></AuthenticatedOnly>} />
     <Route path="/demo" element={<Demo />} />
+    <Route path="/contact" element={<ContactUs />} />
     <Route element={<ProtectedRoutes />}>
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/create-bill" element={<CreateBill />} />
@@ -71,7 +72,6 @@ export default function App() {
       <Route path="/customers" element={<Customers />} />
       <Route path="/customers/:customerId" element={<CustomerProfile />} />
       <Route path="/settings" element={<Settings />} />
-      <Route path="/contact" element={<ContactUs />} />
       <Route path="/admin" element={<AdminOnly><Admin /></AdminOnly>} />
     </Route>
     <Route path="/" element={<PublicOrUnsubscribed><Landing /></PublicOrUnsubscribed>} />

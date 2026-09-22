@@ -75,7 +75,7 @@
 
 .header {
   text-align: center;
-  padding: 80px 20px;
+  padding: 80px 20px 40px 20px;
   background: linear-gradient(to bottom, #fdfdfc, #f4f5f7);
 }
 
@@ -91,6 +91,26 @@
   color: #666;
   max-width: 600px;
   margin: 0 auto;
+}
+
+.demoBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  margin-bottom: 20px;
+}
+
+.demoSection {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 40px 20px 80px 20px;
 }
 
 .section {

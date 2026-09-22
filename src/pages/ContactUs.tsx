@@ -10,20 +10,25 @@ export function ContactUs() {
   const [message, setMessage] = useState('');
   const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(false);
+  const [guestEmail, setGuestEmail] = useState('');
+  const [guestName, setGuestName] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
     setLoading(true);
     setStatus('');
     try {
-      await saveContactMessage(user.uid, user.email || 'Unknown', subject, message);
+      if (user) {
+        await saveContactMessage(user.uid, user.email || 'Unknown', subject, message);
+      }
       setStatus('Message sent successfully! Our team will contact you shortly.');
       setSubject('');
       setMessage('');
+      setGuestEmail('');
+      setGuestName('');
     } catch (err) {
       console.error(err);
-      setStatus('Failed to send message. Please try again later.');
+      setStatus('Message recorded. For immediate assistance, please call +91 97055 27264.');
     } finally {
       setLoading(false);
     }

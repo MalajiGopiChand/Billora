@@ -1,0 +1,192 @@
+.calculatorCard {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.06);
+  max-width: 1040px;
+  margin: 60px auto 0 auto;
+}
+
+.cardHeader {
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto 36px auto;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  margin-bottom: 12px;
+}
+
+.cardHeader h3 {
+  font-size: 26px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 10px 0;
+  letter-spacing: -0.4px;
+}
+
+.cardHeader p {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 40px;
+  align-items: center;
+}
+
+.inputsCol {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.sliderGroup {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px 20px;
+}
+
+.sliderHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.sliderHeader label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.sliderHeader strong {
+  font-size: 14px;
+  color: #2563eb;
+}
+
+.rangeInput {
+  width: 100%;
+  accent-color: #2563eb;
+  cursor: pointer;
+  height: 6px;
+}
+
+.rangeLabels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #94a3b8;
+  margin-top: 6px;
+}
+
+/* Output Col */
+.outputCol {
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  border-radius: 16px;
+  padding: 30px;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.highlightResult {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.highlightIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(37, 99, 235, 0.2);
+  color: #60a5fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.resultLabel {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.hugeNumber {
+  font-size: 36px;
+  font-weight: 800;
+  color: #38bdf8;
+  letter-spacing: -1px;
+  margin: 4px 0 8px 0;
+}
+
+.highlightResult p {
+  margin: 0;
+  font-size: 13px;
+  color: #cbd5e1;
+  line-height: 1.5;
+}
+
+.highlightResult p strong {
+  color: white;
+}
+
+.miniResultsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid #334155;
+}
+
+.miniMetric span {
+  display: block;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.miniMetric strong {
+  font-size: 16px;
+  color: white;
+}
+
+.disclaimer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+@media (max-width: 800px) {
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .calculatorCard {
+    padding: 24px;
+  }
+}
