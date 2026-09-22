@@ -37,7 +37,7 @@ function vercelApiDevPlugin(): Plugin {
             if (sent) return;
             sent = true;
             res.statusCode = this.statusCode;
-            Object.entries(this.headers).forEach(([key, value]) => res.setHeader(key, value));
+            Object.entries(this.headers).forEach(([key, value]) => res.setHeader(key, value as string));
             res.setHeader('Content-Type', 'application/json');
             res.end(JSON.stringify(data));
           },
@@ -45,7 +45,7 @@ function vercelApiDevPlugin(): Plugin {
             if (sent) return;
             sent = true;
             res.statusCode = this.statusCode;
-            Object.entries(this.headers).forEach(([key, value]) => res.setHeader(key, value));
+            Object.entries(this.headers).forEach(([key, value]) => res.setHeader(key, value as string));
             res.end();
           },
         };
@@ -63,8 +63,7 @@ function vercelApiDevPlugin(): Plugin {
 
   return {
     name: 'vercel-api-dev',
-    configureServer(server) { attach(server); },
-    configurePreviewServer(server) { attach(server); },
+    configureServer(server: any) { attach(server); }
   };
 }
 
