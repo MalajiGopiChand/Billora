@@ -48,7 +48,10 @@ export function Subscription() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plan: planId, uid: user.uid })
       });
-      if (!orderRes.ok) throw new Error('Could not create order.');
+      if (!orderRes.ok) {
+        const errText = await orderRes.text();
+        throw new Error(`Order failed: ${errText}`);
+      }
       const orderData = await orderRes.json();
       const { orderId, amount, currency, keyId } = orderData;
 
