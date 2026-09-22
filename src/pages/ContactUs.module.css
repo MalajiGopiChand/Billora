@@ -2,6 +2,8 @@
   max-width: 1040px;
   margin: 30px auto;
   padding: 0 20px;
+  position: relative;
+  z-index: 10;
   animation: fade-in 0.3s ease-out;
 }
 
@@ -12,7 +14,7 @@
 .header h2 {
   font-size: 28px;
   font-weight: 800;
-  color: #0f172a;
+  color: #09090b;
   letter-spacing: -0.6px;
   margin: 0 0 6px;
 }
@@ -68,11 +70,12 @@
 }
 
 .card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  padding: 30px;
-  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.06);
 }
 
 .card h3 {

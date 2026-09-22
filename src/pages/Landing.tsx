@@ -40,6 +40,8 @@ import { OneWorkspaceSection } from '@/components/landing/OneWorkspaceSection';
 import { PricingCalculator } from '@/components/landing/PricingCalculator';
 import { Floating3DParticles } from '@/registry/magicui/floating-3d-particles';
 import { MagicParticlesBanner } from '@/components/landing/MagicParticlesBanner';
+import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
+import { PublicNavbar } from '@/components/landing/PublicNavbar';
 import styles from './Landing.module.css';
 
 export function Landing() {
@@ -138,91 +140,15 @@ export function Landing() {
 
   return (
     <div className={styles.pageWrapper}>
+      <AnimatedBackground />
+
       {/* Interactive Demo Modal */}
       {showDemoModal && (
         <InteractiveDemoModal onClose={() => setShowDemoModal(false)} />
       )}
 
       {/* 3. STICKY PREMIER NAVBAR */}
-      <nav className={`${styles.navbar} ${isScrolled ? styles.navbarScrolled : ''}`}>
-        <div className={styles.navInner}>
-          <Link to="/" className={styles.brand}>
-            <img src="/logo.jpg" alt="Billora" className={styles.brandLogo} />
-            <span className={styles.brandName}>Billora</span>
-          </Link>
-
-          {/* Desktop Nav Links */}
-          <div className={styles.navLinks}>
-            <a href="#home">Home</a>
-            <a href="#features">Features</a>
-            <a href="#how-it-works">How it works</a>
-            <a href="#pricing">Pricing</a>
-            <a href="#why-billora">About</a>
-            <a href="#contact">Contact</a>
-          </div>
-
-          {/* Right Action Buttons */}
-          <div className={styles.navActions}>
-            <button 
-              onClick={() => setShowDemoModal(true)} 
-              className={styles.demoLinkBtn}
-            >
-              <Sparkles size={14} /> Explore Demo
-            </button>
-            {user ? (
-              <Link to={isAdmin ? "/admin" : "/dashboard"} className={styles.primaryNavBtn}>
-                {isAdmin ? "Admin Console" : "Open Dashboard"} <ArrowRight size={15} />
-              </Link>
-            ) : (
-              <>
-                <Link to="/login" className={styles.signInBtn}>Sign in</Link>
-                <Link to="/register" className={styles.primaryNavBtn}>
-                  Get Started <ArrowRight size={14} />
-                </Link>
-              </>
-            )}
-          </div>
-
-          {/* Mobile Menu Toggle */}
-          <button 
-            className={styles.mobileMenuToggle}
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Toggle mobile menu"
-          >
-            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
-        </div>
-
-        {/* Mobile Dropdown Drawer */}
-        {mobileMenuOpen && (
-          <div className={styles.mobileDrawer}>
-            <a href="#home" onClick={() => setMobileMenuOpen(false)}>Home</a>
-            <a href="#features" onClick={() => setMobileMenuOpen(false)}>Features</a>
-            <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)}>How it works</a>
-            <a href="#pricing" onClick={() => setMobileMenuOpen(false)}>Pricing</a>
-            <a href="#why-billora" onClick={() => setMobileMenuOpen(false)}>About</a>
-            <a href="#contact" onClick={() => setMobileMenuOpen(false)}>Contact</a>
-            <div className={styles.mobileDrawerActions}>
-              <button 
-                onClick={() => { setMobileMenuOpen(false); setShowDemoModal(true); }}
-                className={styles.mobileDemoBtn}
-              >
-                <Sparkles size={14} /> Try Interactive Demo
-              </button>
-              {user ? (
-                <Link to={isAdmin ? "/admin" : "/dashboard"} className={styles.mobileStartBtn}>
-                  Open Workspace
-                </Link>
-              ) : (
-                <>
-                  <Link to="/login" className={styles.mobileLoginBtn}>Sign In</Link>
-                  <Link to="/register" className={styles.mobileStartBtn}>Create Workspace</Link>
-                </>
-              )}
-            </div>
-          </div>
-        )}
-      </nav>
+      <PublicNavbar onOpenDemo={() => setShowDemoModal(true)} />
 
       {/* 4. HERO SECTION */}
       <header id="home" className={styles.heroSection}>

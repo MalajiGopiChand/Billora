@@ -1,6 +1,6 @@
 .pageWrapper {
-  background-color: #fafaf9;
-  color: #0f172a;
+  background-color: #ffffff;
+  color: #09090b;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   overflow-x: hidden;
   position: relative;
@@ -14,15 +14,15 @@
   left: 0;
   right: 0;
   z-index: 100;
-  background: rgba(250, 250, 249, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(226, 232, 240, 0.7);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
   transition: all 0.25s ease;
 }
 
 .navbarScrolled {
-  background: rgba(255, 255, 255, 0.94);
+  background: rgba(255, 255, 255, 0.95);
   box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05);
   border-bottom-color: #e2e8f0;
 }
@@ -205,8 +205,8 @@
 
 /* 4. HERO SECTION */
 .heroSection {
-  padding: 80px 24px 60px 24px;
-  background: radial-gradient(circle at 50% 0%, #f1f5f9 0%, #fafaf9 70%);
+  padding: 88px 24px 64px 24px;
+  background: transparent;
   position: relative;
   text-align: center;
   overflow: hidden;
@@ -223,14 +223,15 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  padding: 6px 16px;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  padding: 7px 18px;
   border-radius: 9999px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
-  color: #334155;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+  color: #1e293b;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
   margin-bottom: 24px;
 }
 
@@ -242,9 +243,12 @@
   font-size: 58px;
   line-height: 1.1;
   font-weight: 850;
-  color: #0f172a;
+  color: #09090b;
   letter-spacing: -1.8px;
   margin: 0 0 20px 0;
+  background: linear-gradient(180deg, #09090b 25%, #27272a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .heroSubhead {
@@ -275,9 +279,9 @@
 
 .heroPrimaryBtn {
   text-decoration: none;
-  background: #0f172a;
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
   color: #ffffff;
-  padding: 15px 30px;
+  padding: 15px 32px;
   border-radius: 12px;
   font-size: 16px;
   font-weight: 650;
@@ -285,13 +289,13 @@
   align-items: center;
   gap: 10px;
   transition: all 0.2s ease;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.2);
+  box-shadow: 0 8px 24px rgba(79, 70, 229, 0.35);
 }
 
 .heroPrimaryBtn:hover {
-  background: #1e293b;
+  background: linear-gradient(135deg, #4338ca 0%, #4f46e5 100%);
   transform: translateY(-2px);
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.28);
+  box-shadow: 0 12px 30px rgba(79, 70, 229, 0.45);
 }
 
 .heroSecondaryBtn {
@@ -487,7 +491,7 @@
 /* 16. BUSINESS INSIGHTS */
 .insightsSection {
   padding: 100px 24px;
-  background: #fafaf9;
+  background: transparent;
 }
 
 .insightsInner {
@@ -504,7 +508,7 @@
 .sectionHeaderCentered h2 {
   font-size: 36px;
   font-weight: 800;
-  color: #0f172a;
+  color: #09090b;
   letter-spacing: -0.8px;
   margin: 0 0 12px 0;
 }
@@ -523,17 +527,19 @@
 }
 
 .insightBox {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(226, 232, 240, 0.9);
   border-radius: 16px;
   padding: 26px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
-  transition: transform 0.2s ease;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+  transition: all 0.2s ease;
 }
 
 .insightBox:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 16px 32px rgba(99, 102, 241, 0.08);
+  border-color: #cbd5e1;
 }
 
 .insightIcon {
@@ -617,7 +623,7 @@
 /* 18. WHY BILLORA */
 .whySection {
   padding: 100px 24px;
-  background: #fafaf9;
+  background: transparent;
 }
 
 .whyInner {
@@ -632,7 +638,7 @@
 .whyLeft h2 {
   font-size: 36px;
   font-weight: 800;
-  color: #0f172a;
+  color: #09090b;
   letter-spacing: -0.8px;
   margin: 0 0 16px 0;
 }
@@ -898,7 +904,7 @@
 /* 22. PRICING SECTION */
 .pricingSection {
   padding: 100px 24px;
-  background: #fafaf9;
+  background: transparent;
 }
 
 .pricingInner {
@@ -908,12 +914,14 @@
 
 .pricingToggle {
   display: inline-flex;
-  background: #f1f5f9;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
   border: 1px solid #e2e8f0;
   padding: 4px;
   border-radius: 12px;
   gap: 4px;
   margin-top: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
 }
 
 .pricingToggle button {
@@ -933,23 +941,14 @@
 
 .pricingToggle button.toggleActive {
   background: #ffffff;
-  color: #0f172a;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  color: #09090b;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 .saveBadge {
   background: #ecfdf5;
   color: #059669;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-.bestBadge {
-  background: #eff6ff;
-  color: #2563eb;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   padding: 2px 6px;
   border-radius: 4px;
@@ -963,24 +962,27 @@
 }
 
 .priceCard {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(226, 232, 240, 0.9);
   border-radius: 20px;
   padding: 36px 30px;
   display: flex;
   flex-direction: column;
   position: relative;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);
 }
 
 .priceCard:hover {
   transform: translateY(-4px);
-  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 20px 40px rgba(99, 102, 241, 0.1);
+  border-color: #cbd5e1;
 }
 
 .cardHighlight {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+  border-color: #6366f1;
+  box-shadow: 0 10px 30px -5px rgba(99, 102, 241, 0.2), 0 0 0 2px rgba(99, 102, 241, 0.25);
 }
 
 .popularTag, .bestValueTag {
@@ -997,11 +999,11 @@
 }
 
 .popularTag {
-  background: #0f172a;
+  background: #09090b;
 }
 
 .bestValueTag {
-  background: #2563eb;
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
 }
 
 .planName {
@@ -1070,19 +1072,21 @@
 
 .planBtnPrimary {
   text-decoration: none;
-  background: #0f172a;
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
   color: #ffffff;
-  padding: 12px 20px;
-  border-radius: 10px;
+  padding: 13px 22px;
+  border-radius: 12px;
   font-size: 14px;
   font-weight: 650;
   text-align: center;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.15);
+  box-shadow: 0 4px 16px rgba(79, 70, 229, 0.3);
 }
 
 .planBtnPrimary:hover {
-  background: #2563eb;
+  background: linear-gradient(135deg, #4338ca 0%, #4f46e5 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(79, 70, 229, 0.4);
 }
 
 .planBtnSecondary {
@@ -1105,7 +1109,7 @@
 /* 24. TESTIMONIALS */
 .testimonialsSection {
   padding: 100px 24px;
-  background: #ffffff;
+  background: transparent;
 }
 
 .testimonialsInner {
@@ -1120,13 +1124,22 @@
 }
 
 .testCard {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  padding: 30px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 18px;
+  padding: 32px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);
+  transition: all 0.2s ease;
+}
+
+.testCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 36px rgba(99, 102, 241, 0.08);
+  border-color: #cbd5e1;
 }
 
 .testCard p {
@@ -1170,7 +1183,7 @@
 /* 25. FAQ SECTION */
 .faqSection {
   padding: 100px 24px;
-  background: #fafaf9;
+  background: transparent;
 }
 
 .faqInner {
@@ -1185,29 +1198,31 @@
 }
 
 .accordionItem {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 14px;
   overflow: hidden;
-  transition: border-color 0.2s ease;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
 }
 
 .accordionOpen {
   border-color: #cbd5e1;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
 }
 
 .accordionHeader {
   width: 100%;
   background: transparent;
   border: none;
-  padding: 18px 24px;
+  padding: 20px 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   font-size: 16px;
   font-weight: 700;
-  color: #0f172a;
+  color: #09090b;
   cursor: pointer;
   text-align: left;
 }
@@ -1231,7 +1246,7 @@
 /* 25.5 MAGIC PARTICLES BANNER */
 .magicParticlesSection {
   padding: 40px 24px 60px 24px;
-  background: #fafaf9;
+  background: transparent;
 }
 
 .magicParticlesContainer {
@@ -1242,18 +1257,19 @@
 /* 26. FINAL CTA */
 .finalCtaSection {
   padding: 80px 24px;
-  background: #fafaf9;
+  background: transparent;
 }
 
 .finalCtaInner {
   max-width: 1040px;
   margin: 0 auto;
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-  border-radius: 24px;
-  padding: 60px 40px;
+  background: linear-gradient(135deg, #09090b 0%, #1e1b4b 60%, #0f172a 100%);
+  border-radius: 28px;
+  padding: 64px 40px;
   text-align: center;
   color: white;
-  box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 25px 60px -15px rgba(2, 6, 23, 0.4), 0 0 0 1px rgba(99, 102, 241, 0.2);
 }
 
 .finalCtaInner h2 {
@@ -1328,7 +1344,7 @@
 /* 27. CONTACT SECTION */
 .contactSection {
   padding: 100px 24px;
-  background: #ffffff;
+  background: transparent;
 }
 
 .contactInner {
@@ -1343,7 +1359,7 @@
 .contactInfoCol h2 {
   font-size: 36px;
   font-weight: 800;
-  color: #0f172a;
+  color: #09090b;
   letter-spacing: -0.8px;
   margin: 0 0 14px 0;
 }
@@ -1395,16 +1411,18 @@
 }
 
 .contactBox {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(226, 232, 240, 0.9);
   border-radius: 20px;
   padding: 36px;
+  box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.06);
 }
 
 .contactBox h3 {
   font-size: 20px;
   font-weight: 700;
-  color: #0f172a;
+  color: #09090b;
   margin: 0 0 6px 0;
 }
 

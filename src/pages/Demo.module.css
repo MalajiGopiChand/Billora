@@ -1,7 +1,8 @@
 .page {
-  background: #fdfdfc;
+  background: #ffffff;
   min-height: 100vh;
-  color: #1a1a1a;
+  color: #09090b;
+  position: relative;
   font-family: system-ui, -apple-system, sans-serif;
 }
 
@@ -9,12 +10,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 40px;
-  background: white;
-  border-bottom: 1px solid #eee;
+  padding: 16px 36px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 20;
 }
 
 .brand {

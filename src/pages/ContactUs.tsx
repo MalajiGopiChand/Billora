@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Mail, Phone, MapPin, Sparkles, Send, CheckCircle2, MessageSquare } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { saveContactMessage, getContactNotice } from '../lib/firestore';
+import { AnimatedBackground } from '@/components/ui/AnimatedBackground';
+import { PublicNavbar } from '@/components/landing/PublicNavbar';
 import styles from './ContactUs.module.css';
 
 export function ContactUs() {
@@ -64,8 +66,11 @@ export function ContactUs() {
   };
 
   return (
-    <div className={styles.container}>
-      <header className={styles.header}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      <PublicNavbar />
+      <div className={styles.container} style={{ flex: 1 }}>
+        <AnimatedBackground />
+        <header className={styles.header}>
         <h2>Contact Support</h2>
         <p>We are here to help you get the most out of Billora for your shop.</p>
       </header>
@@ -196,6 +201,7 @@ export function ContactUs() {
           </form>
         </section>
       </div>
+    </div>
     </div>
   );
 }
