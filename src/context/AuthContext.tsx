@@ -35,7 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     login: async (email, password) => { await signInWithEmailAndPassword(auth, email, password); },
     register: async (email, password) => {
       const credential = await createUserWithEmailAndPassword(auth, email, password);
-      await setDoc(doc(db, 'users', credential.user.uid), { uid: credential.user.uid, email: credential.user.email });
+      await setDoc(doc(db, 'users', credential.user.uid), { uid: credential.user.uid, email: credential.user.email, createdAt: new Date().toISOString() });
     },
     logout: () => signOut(auth),
   };

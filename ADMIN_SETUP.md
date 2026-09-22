@@ -33,4 +33,11 @@ The browser cannot safely process payments or create free-access accounts. Those
 
    The administrator must sign out and in again for the claim to refresh.
 
+5. Razorpay webhook (Dashboard → Account & Settings → Webhooks):
+
+   - URL: `https://billora-gamma.vercel.app/api/razorpayWebhook`
+   - Secret: generate in Razorpay, then set the same value as `RAZORPAY_WEBHOOK_SECRET` on Vercel (and `firebase functions:secrets:set RAZORPAY_WEBHOOK_SECRET`)
+   - Alert email: your ops email
+   - Active events (only these): `payment.captured`, `order.paid`, `payment.failed`
+
 `grantComplimentaryAccess` creates the supplied Firebase account and an active complimentary subscription. It is callable only by a user with the `admin` custom claim.

@@ -3,14 +3,18 @@ import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { FieldValue, getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { defineSecret } from 'firebase-functions/params';
-import { HttpsError, onCall } from 'firebase-functions/v2/https';
+import { HttpsError, onCall, onRequest } from 'firebase-functions/v2/https';
 import Razorpay from 'razorpay';
 
 initializeApp();
 const adminDb = getFirestore();
 const razorpayKeyId = defineSecret('RAZORPAY_KEY_ID');
 const razorpayKeySecret = defineSecret('RAZORPAY_KEY_SECRET');
+const razorpayWebhookSecret = defineSecret('RAZORPAY_WEBHOOK_SECRET');
 const region = 'asia-south1';
+const callableAuth = { region, cors: true as const, invoker: 'public' as const };
+const callablePayments = { ...callableAuth, secrets: [razorpayKeyId, razorpayKeySecret] };
+const webhookHttp = { region, cors: false as const, invoker: 'public' as const, secrets: [razorpayKeyId, razorpayKeySecret, razorpayWebhookSecret] };
 
 const plans = {
   monthly: { amount: 49900, months: 1 },
@@ -24,15 +28,55 @@ const requireAdmin = (admin: boolean | undefined) => { if (!admin) throw new Htt
 
 function expiryFrom(start: Date, months: number) { const expiry = new Date(start); expiry.setMonth(expiry.getMonth() + months); return expiry; }
 
-export const createSubscriptionOrder = onCall({ region, cors: true, secrets: [razorpayKeyId, razorpayKeySecret] }, async (request) => {
+async function activatePaidPlan(uid: string, planId: PlanId, paymentId: string, orderId: string, email = '') {
+  const subRef = adminDb.doc(`subscriptions/${uid}`);
+  const current = await subRef.get();
+  if (current.data()?.paymentId === paymentId) return current.data()?.expiresAt?.toDate?.() as Date | undefined;
+  const now = new Date();
+  const currentExpiry = current.data()?.expiresAt?.toDate?.();
+  const startFrom = currentExpiry && currentExpiry > now ? currentExpiry : now;
+  const expiresAt = expiryFrom(startFrom, plans[planId].months);
+  await subRef.set({
+    uid,
+    email: email || current.data()?.email || '',
+    plan: planId,
+    status: 'active',
+    amount: plans[planId].amount / 100,
+    paymentId,
+    orderId,
+    startedAt: Timestamp.fromDate(now),
+    expiresAt: Timestamp.fromDate(expiresAt),
+    updatedAt: FieldValue.serverTimestamp(),
+  }, { merge: true });
+  await adminDb.doc(`payment_attempts/${orderId}`).set({ uid, planId, paymentId, verifiedAt: FieldValue.serverTimestamp() }, { merge: true });
+  return expiresAt;
+}
+
+function readSecret(secret: { value: () => string }, fallbackEnv: string | undefined, fallback: string) {
+  try {
+    const value = secret.value();
+    if (value) return value;
+  } catch {
+    // Secret not bound on this instance.
+  }
+  return fallbackEnv || fallback;
+}
+
+function razorpayCredentials() {
+  const rawId = readSecret(razorpayKeyId, process.env.RAZORPAY_KEY_ID, 'rzp_test_TerSsmJLRMZdu0');
+  const rawSecret = readSecret(razorpayKeySecret, process.env.RAZORPAY_KEY_SECRET, 'ybnkpQeMk3zgsS0qnucaUWIO');
+  const mashed = rawId.match(/^(rzp_(?:live|test)_[A-Za-z0-9]{14})([A-Za-z0-9]{20,40})$/);
+  if (mashed) return { keyId: mashed[1], keySecret: mashed[2] };
+  return { keyId: rawId, keySecret: rawSecret };
+}
+
+export const createSubscriptionOrder = onCall(callablePayments, async (request) => {
   const uid = requireUser(request.auth?.uid);
   const planId = request.data?.plan as PlanId;
   if (!Object.hasOwn(plans, planId)) throw new HttpsError('invalid-argument', 'Choose a valid subscription plan.');
   
   const plan = plans[planId];
-  
-  const keyId = razorpayKeyId.value() || process.env.RAZORPAY_KEY_ID || 'rzp_test_TerSsmJLRMZdu0';
-  const keySecret = razorpayKeySecret.value() || process.env.RAZORPAY_KEY_SECRET || 'ybnkpQeMk3zgsS0qnucaUWIO';
+  const { keyId, keySecret } = razorpayCredentials();
   
   const rzp = new Razorpay({
     key_id: keyId,
@@ -54,13 +98,13 @@ export const createSubscriptionOrder = onCall({ region, cors: true, secrets: [ra
   }
 });
 
-export const verifySubscriptionPayment = onCall({ region, cors: true, secrets: [razorpayKeyId, razorpayKeySecret] }, async (request) => {
+export const verifySubscriptionPayment = onCall(callablePayments, async (request) => {
   const uid = requireUser(request.auth?.uid);
   const { orderId, paymentId, signature } = request.data || {} as Record<string, string>;
   if (!orderId || !paymentId || !signature) throw new HttpsError('invalid-argument', 'Incomplete payment verification data.');
   
-  const secret = razorpayKeySecret.value() || process.env.RAZORPAY_KEY_SECRET || 'ybnkpQeMk3zgsS0qnucaUWIO';
-  const expected = crypto.createHmac('sha256', secret).update(`${orderId}|${paymentId}`).digest('hex');
+  const { keySecret } = razorpayCredentials();
+  const expected = crypto.createHmac('sha256', keySecret).update(`${orderId}|${paymentId}`).digest('hex');
   
   if (expected !== signature) throw new HttpsError('permission-denied', 'Payment signature is invalid.');
   
@@ -68,19 +112,11 @@ export const verifySubscriptionPayment = onCall({ region, cors: true, secrets: [
   if (!attempt.exists || attempt.data()?.uid !== uid) throw new HttpsError('permission-denied', 'Payment order is not assigned to this account.');
   
   const planId = attempt.data()?.planId as PlanId;
-  const now = new Date();
-  const current = await adminDb.doc(`subscriptions/${uid}`).get();
-  const currentExpiry = current.data()?.expiresAt?.toDate?.();
-  const startFrom = currentExpiry && currentExpiry > now ? currentExpiry : now;
-  const expiresAt = expiryFrom(startFrom, plans[planId].months);
-  
-  await adminDb.doc(`subscriptions/${uid}`).set({ uid, email: request.auth?.token.email || '', plan: planId, status: 'active', amount: plans[planId].amount / 100, paymentId, orderId, startedAt: Timestamp.fromDate(now), expiresAt: Timestamp.fromDate(expiresAt), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-  await attempt.ref.update({ paymentId, verifiedAt: FieldValue.serverTimestamp() });
-  
-  return { active: true, expiresAt: expiresAt.toISOString() };
+  const expiresAt = await activatePaidPlan(uid, planId, paymentId, orderId, request.auth?.token.email || '');
+  return { active: true, expiresAt: expiresAt?.toISOString() };
 });
 
-export const grantComplimentaryAccess = onCall({ region, cors: true }, async (request) => {
+export const grantComplimentaryAccess = onCall(callableAuth, async (request) => {
   requireAdmin(request.auth?.token.admin as boolean | undefined);
   const { email, password, months = 12 } = request.data || {} as { email: string; password: string; months?: number };
   if (!email || !password || password.length < 6) throw new HttpsError('invalid-argument', 'Enter an email and a password of at least six characters.');
@@ -90,7 +126,7 @@ export const grantComplimentaryAccess = onCall({ region, cors: true }, async (re
   return { uid: account.uid, expiresAt: expiresAt.toISOString() };
 });
 
-export const getAdminOverview = onCall({ region, cors: true }, async (request) => {
+export const getAdminOverview = onCall(callableAuth, async (request) => {
   requireAdmin(request.auth?.token.admin as boolean | undefined);
   const [users, subscriptions, invoices] = await Promise.all([adminDb.collection('users').get(), adminDb.collection('subscriptions').get(), adminDb.collection('invoices').get()]);
   const now = new Date(); const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()); const startMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -103,4 +139,64 @@ export const getAdminOverview = onCall({ region, cors: true }, async (request) =
     return { uid: item.id, email: item.data().email || '', createdAt: item.data().createdAt?.toDate()?.toISOString() || null, subscription: isActive ? 'active' : (sub ? 'expired' : 'none') };
   });
   return { clients: users.size, activeSubscriptions: activeSubscriptions.length, totalTurnover: sum(invoiceData), monthlyTurnover: sum(invoiceData.filter((invoice) => invoice.createdAt?.toDate() >= startMonth)), dailyTurnover: sum(invoiceData.filter((invoice) => invoice.createdAt?.toDate() >= startToday)), recentClients };
+});
+
+export const razorpayWebhook = onRequest(webhookHttp, async (req, res) => {
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
+
+  const signature = String(req.headers['x-razorpay-signature'] || '');
+  const secret = readSecret(razorpayWebhookSecret, process.env.RAZORPAY_WEBHOOK_SECRET, '');
+  const raw = (req.rawBody ? req.rawBody.toString('utf8') : JSON.stringify(req.body || {}));
+  if (!secret) {
+    res.status(500).json({ error: 'Webhook secret is not configured.' });
+    return;
+  }
+  const expected = crypto.createHmac('sha256', secret).update(raw).digest('hex');
+  if (expected !== signature) {
+    res.status(400).json({ error: 'Invalid webhook signature.' });
+    return;
+  }
+
+  const event = req.body?.event as string;
+  if (event === 'payment.failed') {
+    const payment = req.body?.payload?.payment?.entity || {};
+    await adminDb.doc(`payment_attempts/${payment.order_id || payment.id || 'unknown'}`).set({
+      status: 'failed',
+      paymentId: payment.id || '',
+      failedAt: FieldValue.serverTimestamp(),
+      error: payment.error_description || 'Payment failed',
+    }, { merge: true });
+    res.status(200).json({ ok: true, event });
+    return;
+  }
+
+  if (event !== 'payment.captured' && event !== 'order.paid') {
+    res.status(200).json({ ok: true, ignored: event });
+    return;
+  }
+
+  const payment = req.body?.payload?.payment?.entity || {};
+  const order = req.body?.payload?.order?.entity || {};
+  const orderId = String(payment.order_id || order.id || '');
+  const paymentId = String(payment.id || order.payments?.[0] || '');
+  let uid = String(payment.notes?.uid || order.notes?.uid || '');
+  let planId = String(payment.notes?.planId || order.notes?.planId || '') as PlanId;
+
+  if ((!uid || !Object.hasOwn(plans, planId)) && orderId) {
+    const attempt = await adminDb.doc(`payment_attempts/${orderId}`).get();
+    uid = uid || String(attempt.data()?.uid || '');
+    planId = (planId || attempt.data()?.planId) as PlanId;
+  }
+
+  if (!uid || !Object.hasOwn(plans, planId) || !orderId) {
+    res.status(200).json({ ok: true, skipped: 'Missing order mapping' });
+    return;
+  }
+
+  const emailSnap = await adminDb.doc(`users/${uid}`).get();
+  await activatePaidPlan(uid, planId, paymentId || orderId, orderId, String(emailSnap.data()?.email || ''));
+  res.status(200).json({ ok: true, event, uid });
 });
