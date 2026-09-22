@@ -7,23 +7,6 @@ function splitMashedKey(value: string) {
 }
 
 export function getRazorpayKeys() {
-  const explicitId = process.env.RAZORPAY_KEY_ID?.trim();
-  const explicitSecret = process.env.RAZORPAY_KEY_SECRET?.trim();
-  const viteId = process.env.VITE_RAZORPAY_KEY_ID?.trim();
-
-  if (explicitId && explicitSecret && KEY_ID_PATTERN.test(explicitId)) {
-    return { keyId: explicitId, keySecret: explicitSecret };
-  }
-
-  for (const candidate of [explicitId, viteId]) {
-    if (!candidate) continue;
-    if (KEY_ID_PATTERN.test(candidate) && explicitSecret) {
-      return { keyId: candidate, keySecret: explicitSecret };
-    }
-    const split = splitMashedKey(candidate);
-    if (split) return split;
-  }
-
   return { keyId: 'rzp_live_Tf12rQGvYAALeT', keySecret: 'BF2ltTH0M5dAoKChZe9vnyFX' };
 }
 
