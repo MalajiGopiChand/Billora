@@ -8,12 +8,12 @@
 .links a:hover, .login:hover { color: #0f172a; }
 .start, .cta, .secondary { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; text-decoration: none; border-radius: 99px; }
 .start { color: #ffffff; padding: 10px 18px; background: #0f172a; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15); }
-.hero { min-height: 640px; width: min(1180px, calc(100% - 40px)); margin: 0 auto; position: relative; display: grid; place-items: center; }
-.hero::before { content: ''; position: absolute; top: -100px; left: 50%; transform: translateX(-50%); width: 800px; height: 800px; background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, rgba(248, 250, 252, 0) 70%); z-index: 0; pointer-events: none; }
-.copy { position: relative; z-index: 1; max-width: 760px; padding-top: 140px; text-align: center; }
+.hero { min-height: 500px; width: min(1180px, calc(100% - 40px)); margin: 0 auto; position: relative; display: grid; place-items: center; }
+.hero::before { content: ''; position: absolute; top: -80px; left: 50%; transform: translateX(-50%); width: 800px; height: 800px; background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, rgba(248, 250, 252, 0) 70%); z-index: 0; pointer-events: none; }
+.copy { position: relative; z-index: 1; max-width: 760px; padding-top: 80px; text-align: center; }
 .copy > p, .sectionIntro > p, .why > div:last-child > p { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 16px; color: #4f46e5; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; background: #e0e7ff; padding: 6px 12px; border-radius: 20px; }
 .copy h1 { margin: 0; font-size: clamp(42px, 6vw, 72px); line-height: 1.05; letter-spacing: -2.5px; font-weight: 850; color: #0f172a; }
-.copy > span { display: block; max-width: 620px; color: #475569; margin: 24px auto 32px; line-height: 1.6; font-size: 18px; }
+.copy > span { display: block; max-width: 620px; color: #475569; margin: 16px auto 24px; line-height: 1.6; font-size: 18px; }
 .copy > div { display: flex; justify-content: center; gap: 14px; }
 .cta { padding: 14px 24px; color: #fff; background: #4f46e5; box-shadow: 0 8px 24px rgba(79, 70, 229, 0.25); }
 .cta:hover { background: #4338ca; }
@@ -21,14 +21,14 @@
 .secondary:hover { background: #f1f5f9; border-color: #94a3b8; }
 .copy small { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 20px; color: #64748b; font-size: 12px; font-weight: 500; }
 .copy small svg { color: #22c55e; }
-.proof { width: min(1080px, calc(100% - 40px)); display: grid; grid-template-columns: repeat(4, 1fr); margin: 0 auto 120px; position: relative; z-index: 1; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.03); overflow: hidden; }
+.proof { width: min(1080px, calc(100% - 40px)); display: grid; grid-template-columns: repeat(4, 1fr); margin: 60px auto 80px; position: relative; z-index: 1; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.03); overflow: hidden; }
 .proof div { padding: 24px 32px; border-right: 1px solid #e2e8f0; text-align: left; }
 .proof div:last-child { border: 0; }
 .proof strong, .proof span { display: block; }
 .proof strong { color: #0f172a; font-size: 15px; font-weight: 750; margin-bottom: 6px; }
 .proof span { color: #64748b; font-size: 13px; line-height: 1.4; }
-.section { width: min(1180px, calc(100% - 40px)); margin: 0 auto 140px; }
-.sectionIntro { max-width: 640px; margin: 0 auto 48px; text-align: center; }
+.section { width: min(1180px, calc(100% - 40px)); margin: 0 auto 80px; }
+.sectionIntro { max-width: 640px; margin: 0 auto 40px; text-align: center; }
 .sectionIntro h2, .why h2 { margin: 0; font-size: clamp(32px, 4vw, 48px); line-height: 1.1; letter-spacing: -1.5px; font-weight: 800; color: #0f172a; }
 .sectionIntro > span { display: block; color: #475569; margin-top: 16px; font-size: 16px; line-height: 1.5; }
 .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
@@ -37,7 +37,7 @@
 .steps svg { color: #4f46e5; margin: 24px 0 16px; }
 .steps h3 { margin: 0 0 12px; font-size: 20px; color: #0f172a; font-weight: 750; }
 .steps p { margin: 0; color: #64748b; font-size: 14px; line-height: 1.6; }
-.why { display: grid; grid-template-columns: 1.2fr 1fr; gap: 80px; align-items: center; width: min(1080px, calc(100% - 40px)); margin: 0 auto 140px; }
+.why { display: grid; grid-template-columns: 1.2fr 1fr; gap: 60px; align-items: center; width: min(1080px, calc(100% - 40px)); margin: 0 auto 80px; }
 .dashboardMock { padding: 24px; border-radius: 24px; background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 30px 60px rgba(15, 23, 42, 0.08); }
 .mockHead { display: flex; gap: 6px; padding-bottom: 20px; border-bottom: 1px solid #f1f5f9; margin-bottom: 20px; }
 .mockHead span { width: 10px; height: 10px; border-radius: 99px; background: #cbd5e1; }
@@ -60,8 +60,8 @@
 .why li { display: flex; gap: 14px; color: #475569; font-size: 15px; line-height: 1.5; }
 .why li svg { color: #4f46e5; flex: 0 0 auto; margin-top: 2px; }
 .why li b { display: block; color: #0f172a; margin-bottom: 4px; font-size: 16px; }
-.pricing { padding: 120px 0; background: #ffffff; border-top: 1px solid #e2e8f0; }
-.pricing .sectionIntro { margin-bottom: 50px; }
+.pricing { padding: 80px 0; background: #ffffff; border-top: 1px solid #e2e8f0; }
+.pricing .sectionIntro { margin-bottom: 40px; }
 .planGrid { width: min(1080px, 100%); margin: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; padding: 0 20px; box-sizing: border-box; }
 .planGrid article { position: relative; padding: 32px; border-radius: 24px; background: #f8fafc; border: 1px solid #e2e8f0; }
 .planGrid .featured { transform: translateY(-12px); background: #ffffff; border-color: #6366f1; box-shadow: 0 30px 60px rgba(99, 102, 241, 0.12); }
@@ -79,8 +79,8 @@
 footer { display: flex; align-items: center; justify-content: space-between; gap: 20px; width: min(1180px, calc(100% - 40px)); margin: 0 auto; padding: 40px 0; color: #64748b; font-size: 14px; border-top: 1px solid #e2e8f0; }
 footer p { margin: 0; }
 footer > a { color: #0f172a; text-decoration: none; font-weight: 600; }
-@media(max-width:900px) { .proof { grid-template-columns: repeat(2, 1fr); margin-bottom: 80px; } .proof div:nth-child(2) { border-right: 0; } .proof div:nth-child(-n+2) { border-bottom: 1px solid #e2e8f0; } .why { grid-template-columns: 1fr; gap: 60px; } .dashboardMock { transform: none; max-width: 600px; margin: auto; } }
-@media(max-width:760px) { .nav { width: calc(100% - 32px); height: 70px; } .links, .login { display: none; } .hero { width: calc(100% - 32px); min-height: 520px; } .hero::before { width: 100%; top: -50px; } .copy { padding-top: 80px; } .copy h1 { letter-spacing: -1.5px; } .copy > span { font-size: 16px; margin: 16px auto 24px; } .copy > div { flex-direction: column; align-items: stretch; padding: 0 20px; } .cta, .secondary { justify-content: center; } .steps, .planGrid { grid-template-columns: 1fr; } .section { margin-bottom: 80px; } .planGrid { max-width: 480px; padding: 0; } .planGrid .featured { transform: none; } .pricing { padding: 80px 20px; } footer { flex-direction: column; align-items: center; text-align: center; gap: 12px; } }
+@media(max-width:900px) { .proof { grid-template-columns: repeat(2, 1fr); margin-bottom: 60px; } .proof div:nth-child(2) { border-right: 0; } .proof div:nth-child(-n+2) { border-bottom: 1px solid #e2e8f0; } .why { grid-template-columns: 1fr; gap: 40px; } .dashboardMock { transform: none; max-width: 600px; margin: auto; } }
+@media(max-width:760px) { .nav { width: calc(100% - 32px); height: 70px; } .links, .login { display: none; } .hero { width: calc(100% - 32px); min-height: 480px; } .hero::before { width: 100%; top: -50px; } .copy { padding-top: 60px; } .copy h1 { letter-spacing: -1.5px; font-size: 36px; } .copy > span { font-size: 16px; margin: 16px auto 24px; } .copy > div { flex-direction: column; align-items: stretch; padding: 0 20px; } .cta, .secondary { justify-content: center; } .steps, .planGrid { grid-template-columns: 1fr; } .section { margin-bottom: 60px; } .planGrid { max-width: 480px; padding: 0; } .planGrid .featured { transform: none; } .pricing { padding: 60px 20px; } footer { flex-direction: column; align-items: center; text-align: center; gap: 12px; } }
 
 /* Dark Mode Overrides */
 .dark {
