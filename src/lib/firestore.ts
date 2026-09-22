@@ -163,6 +163,10 @@ export async function listContactMessages() {
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
+export async function deleteContactMessage(id: string) {
+  return deleteDoc(doc(db, 'contact_messages', id));
+}
+
 export async function getContactNotice(): Promise<{ notice?: string; phone?: string; email?: string } | null> {
   try {
     const snap = await getDoc(doc(db, 'site_settings', 'contact_notice'));
