@@ -17,12 +17,6 @@ export default async function handler(req: any, res: any) {
   const planId = String(body.plan || '');
   const uid = String(body.uid || '');
 
-  const keyId = process.env.VITE_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID;
-  const keySecret = process.env.RAZORPAY_KEY_SECRET;
-
-  if (!keyId || !keySecret) {
-    return res.status(500).json({ error: 'Razorpay Live keys are not configured in Vercel.' });
-  }
 
   if (!plans[planId as keyof typeof plans]) {
     return res.status(400).json({ error: 'Choose a valid subscription plan.' });
