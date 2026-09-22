@@ -81,3 +81,36 @@ footer p { margin: 0; }
 footer > a { color: #0f172a; text-decoration: none; font-weight: 600; }
 @media(max-width:900px) { .proof { grid-template-columns: repeat(2, 1fr); margin-bottom: 80px; } .proof div:nth-child(2) { border-right: 0; } .proof div:nth-child(-n+2) { border-bottom: 1px solid #e2e8f0; } .why { grid-template-columns: 1fr; gap: 60px; } .dashboardMock { transform: none; max-width: 600px; margin: auto; } }
 @media(max-width:760px) { .nav { width: calc(100% - 32px); height: 70px; } .links, .login { display: none; } .hero { width: calc(100% - 32px); min-height: 520px; } .hero::before { width: 100%; top: -50px; } .copy { padding-top: 80px; } .copy h1 { letter-spacing: -1.5px; } .copy > span { font-size: 16px; margin: 16px auto 24px; } .copy > div { flex-direction: column; align-items: stretch; padding: 0 20px; } .cta, .secondary { justify-content: center; } .steps, .planGrid { grid-template-columns: 1fr; } .section { margin-bottom: 80px; } .planGrid { max-width: 480px; padding: 0; } .planGrid .featured { transform: none; } .pricing { padding: 80px 20px; } footer { flex-direction: column; align-items: center; text-align: center; gap: 12px; } }
+
+/* Dark Mode Overrides */
+.dark {
+  background: #0f172a;
+  color: #f8fafc;
+}
+.page { transition: background-color 0.5s ease, color 0.5s ease; }
+.dark .brand { color: #f8fafc; }
+.dark .links a, .dark .login { color: #94a3b8; }
+.dark .links a:hover, .dark .login:hover { color: #f8fafc; }
+.dark .start { background: #f8fafc; color: #0f172a; }
+.themeToggle {
+  display: flex; align-items: center; justify-content: center;
+  background: transparent; border: none; cursor: pointer;
+  color: #475569; padding: 8px; border-radius: 99px; transition: color 0.2s, background 0.2s;
+}
+.themeToggle:hover { background: rgba(0,0,0,0.05); }
+.dark .themeToggle { color: #cbd5e1; }
+.dark .themeToggle:hover { background: rgba(255,255,255,0.1); }
+.dark .copy h1, .dark .sectionIntro h2, .dark .why h2, .dark .steps h3, .dark .proof strong { color: #f8fafc; }
+.dark .copy > span, .dark .sectionIntro > span, .dark .steps p, .dark .proof span, .dark .why li { color: #cbd5e1; }
+.dark .secondary { background: transparent; border-color: #334155; color: #f8fafc; }
+.dark .secondary:hover { background: #1e293b; }
+.dark .proof, .dark .steps article, .dark .dashboardMock, .dark .planGrid article { background: #1e293b; border-color: #334155; }
+.dark .planGrid .featured { background: #0f172a; border-color: #6366f1; }
+.dark .planGrid h3, .dark .planGrid p { color: #f8fafc; }
+.dark .planGrid > article > a { background: #f8fafc; color: #0f172a; }
+.dark .planGrid .featured > a { background: #4f46e5; color: #fff; }
+.dark .pricing { background: #0f172a; border-top-color: #334155; }
+.dark footer { border-top-color: #334155; color: #94a3b8; }
+.dark footer > a { color: #f8fafc; }
+.dark .why li b { color: #f8fafc; }
+

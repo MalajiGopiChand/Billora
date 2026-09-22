@@ -22,7 +22,7 @@ function ProtectedRoutes() {
   if (loading) return <div className="page-loader">Loading your workspace...</div>;
   if (!user) return <Navigate to="/" replace />;
   if (subscriptionLoading) return <div className="page-loader">Checking your subscription...</div>;
-  if (!hasAccess) return <Navigate to="/" replace />;
+  if (!hasAccess) return <Navigate to="/subscription" replace />;
   return <AppLayout />;
 }
 
@@ -37,6 +37,18 @@ function AdminOnly({ children }: { children: React.ReactNode }) {
   return isAdmin ? <>{children}</> : <Navigate to="/dashboard" replace />;
 }
 
+function GuestOnly({ children }: { children: React.ReactNode }) {
+  const { user, loading, isAdmin } = useAuth();
+  const { hasAccess, loading: subLoading } = useSubscription();
+  if (loading || subLoading) return <div className="page-loader">Loading...</div>;
+  if (user) {
+    if (isAdmin) return <Navigate to="/admin" replace />;
+    if (hasAccess) return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/subscription" replace />;
+  }
+  return <>{children}</>;
+}
+
 function PublicOrUnsubscribed({ children }: { children: React.ReactNode }) {
   const { user, loading, isAdmin } = useAuth();
   const { hasAccess, loading: subLoading } = useSubscription();
@@ -46,8 +58,8 @@ function PublicOrUnsubscribed({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return <Routes>
-    <Route path="/login" element={<PublicOrUnsubscribed><Login /></PublicOrUnsubscribed>} />
-    <Route path="/register" element={<PublicOrUnsubscribed><Register /></PublicOrUnsubscribed>} />
+    <Route path="/login" element={<GuestOnly><Login /></GuestOnly>} />
+    <Route path="/register" element={<GuestOnly><Register /></GuestOnly>} />
     <Route path="/subscription" element={<AuthenticatedOnly><Subscription /></AuthenticatedOnly>} />
     <Route element={<ProtectedRoutes />}>
       <Route path="/dashboard" element={<Dashboard />} />
