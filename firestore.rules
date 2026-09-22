@@ -34,35 +34,35 @@ service cloud.firestore {
 
     // Settings Collection
     match /company_settings/{settingId} {
-      allow read, write: if isAuthenticated() && request.auth.uid == settingId && canUseShopData();
+      allow read, write: if isAuthenticated() && request.auth.uid == settingId;
     }
     
     // Products Collection
     match /products/{productId} {
-      allow read, update, delete: if isOwner() && canUseShopData();
-      allow create: if isCreatingWithOwnerId() && canUseShopData();
+      allow read, update, delete: if isOwner();
+      allow create: if isCreatingWithOwnerId();
     }
     
     // Invoices / Bills Collection
     match /invoices/{invoiceId} {
-      allow read, update, delete: if isOwner() && canUseShopData();
-      allow create: if isCreatingWithOwnerId() && canUseShopData();
+      allow read, update, delete: if isOwner();
+      allow create: if isCreatingWithOwnerId();
     }
     match /bills/{billId} {
-      allow read, update, delete: if isOwner() && canUseShopData();
-      allow create: if isCreatingWithOwnerId() && canUseShopData();
+      allow read, update, delete: if isOwner();
+      allow create: if isCreatingWithOwnerId();
     }
     
     // Orders Collection
     match /orders/{orderId} {
-      allow read, update, delete: if isOwner() && canUseShopData();
-      allow create: if isCreatingWithOwnerId() && canUseShopData();
+      allow read, update, delete: if isOwner();
+      allow create: if isCreatingWithOwnerId();
     }
     
     // Customers Collection
     match /customers/{customerId} {
-      allow read, update, delete: if isOwner() && canUseShopData();
-      allow create: if isCreatingWithOwnerId() && canUseShopData();
+      allow read, update, delete: if isOwner();
+      allow create: if isCreatingWithOwnerId();
     }
     
     // Users Collection (Users can only read/write their own record, Admin can read all)
