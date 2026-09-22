@@ -1,0 +1,303 @@
+.page {
+  background: #fdfdfc;
+  min-height: 100vh;
+  color: #1a1a1a;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 40px;
+  background: white;
+  border-bottom: 1px solid #eee;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 18px;
+  color: #1a1a1a;
+  text-decoration: none;
+}
+
+.brandLogo {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+}
+
+.links {
+  display: flex;
+  gap: 24px;
+}
+
+.links a {
+  color: #666;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.links a:hover {
+  color: #1a1a1a;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+}
+
+.start {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #1a1a1a;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.start:hover {
+  background: #000;
+}
+
+.header {
+  text-align: center;
+  padding: 80px 20px;
+  background: linear-gradient(to bottom, #fdfdfc, #f4f5f7);
+}
+
+.header h1 {
+  font-size: 42px;
+  font-weight: 800;
+  margin: 0 0 16px 0;
+  letter-spacing: -0.5px;
+}
+
+.header p {
+  font-size: 18px;
+  color: #666;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.section {
+  display: flex;
+  align-items: center;
+  gap: 60px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 100px 20px;
+}
+
+.section.reverse {
+  flex-direction: row-reverse;
+}
+
+.content {
+  flex: 1;
+}
+
+.icon {
+  width: 56px;
+  height: 56px;
+  background: #eef2f6;
+  color: #217bb0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.content h2 {
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0 0 20px 0;
+  letter-spacing: -0.5px;
+}
+
+.content p {
+  font-size: 16px;
+  line-height: 1.6;
+  color: #555;
+  margin: 0;
+}
+
+.demoVisual {
+  flex: 1;
+  background: #fff;
+  border: 1px solid #eaeaea;
+  border-radius: 16px;
+  padding: 30px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.04);
+}
+
+/* Mocks */
+.mockDashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.mockKpis {
+  display: flex;
+  gap: 12px;
+}
+
+.mockKpis div {
+  flex: 1;
+  height: 80px;
+  background: #f4f5f7;
+  border-radius: 8px;
+}
+
+.mockChart {
+  height: 200px;
+  background: #f4f5f7;
+  border-radius: 8px;
+}
+
+.mockInvoice {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mockHeader {
+  height: 60px;
+  background: #f4f5f7;
+  border-radius: 8px;
+  width: 60%;
+}
+
+.mockTable {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mockRow {
+  height: 32px;
+  background: #f4f5f7;
+  border-radius: 4px;
+}
+
+.mockTotal {
+  height: 40px;
+  background: #eef2f6;
+  border-radius: 8px;
+  width: 40%;
+  align-self: flex-end;
+  margin-top: 10px;
+}
+
+.mockCustomers {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mockCustomerCard {
+  height: 70px;
+  background: #f4f5f7;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+}
+
+.mockCustomerCard::before {
+  content: '';
+  width: 40px;
+  height: 40px;
+  background: #e1e4e8;
+  border-radius: 50%;
+}
+
+.cta {
+  text-align: center;
+  padding: 100px 20px;
+  background: #1a1a1a;
+  color: white;
+}
+
+.cta h2 {
+  font-size: 36px;
+  font-weight: 700;
+  margin: 0 0 16px 0;
+  color: white;
+}
+
+.cta p {
+  font-size: 18px;
+  color: #aaa;
+  margin: 0 0 32px 0;
+}
+
+.primaryBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #217bb0;
+  color: white;
+  padding: 14px 28px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.primaryBtn:hover {
+  background: #1a6490;
+}
+
+.footer {
+  text-align: center;
+  padding: 40px;
+  border-top: 1px solid #eee;
+  background: white;
+}
+
+.footer a {
+  color: #666;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.footer a:hover {
+  color: #1a1a1a;
+}
+
+@media (max-width: 768px) {
+  .section {
+    flex-direction: column;
+    padding: 60px 20px;
+  }
+  .section.reverse {
+    flex-direction: column;
+  }
+  .demoVisual {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .nav {
+    padding: 16px 20px;
+  }
+  .links {
+    display: none;
+  }
+}

@@ -11,6 +11,7 @@ import { CustomerProfile } from './pages/CustomerProfile';
 import { CreateBill } from './pages/CreateBill';
 import { AllBills } from './pages/AllBills';
 import { Landing } from './pages/Landing';
+import { Demo } from './pages/Demo';
 import { Subscription } from './pages/Subscription';
 import { useSubscription } from './context/SubscriptionContext';
 import { Admin } from './pages/Admin';
@@ -61,6 +62,7 @@ export default function App() {
     <Route path="/login" element={<GuestOnly><Login /></GuestOnly>} />
     <Route path="/register" element={<GuestOnly><Register /></GuestOnly>} />
     <Route path="/subscription" element={<AuthenticatedOnly><Subscription /></AuthenticatedOnly>} />
+    <Route path="/demo" element={<Demo />} />
     <Route element={<ProtectedRoutes />}>
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/create-bill" element={<CreateBill />} />
