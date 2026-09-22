@@ -1,9 +1,11 @@
-import { CheckCircle2, Crown, LogOut, ShieldCheck, Loader2 } from 'lucide-react';
+import { CheckCircle2, Crown, LogOut, ShieldCheck, Loader2, Clock } from 'lucide-react';
 import { useState } from 'react';
-import { httpsCallable } from 'firebase/functions';
-import { functions } from '@/lib/firebase';
+import { Link } from 'react-router-dom';
+import { Timestamp, doc, setDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
 import { useSubscription } from '@/context/SubscriptionContext';
+import { computeRenewalExpiry, formatPlanDate, planMonths, toDate } from '@/lib/subscription';
 import styles from './Subscription.module.css';
 
 const plans = [
@@ -24,9 +26,10 @@ function loadScript(src: string) {
 
 export function Subscription() {
   const { logout, user } = useAuth();
-  const { subscription } = useSubscription();
-  const active = subscription?.status === 'active';
-  
+  const { subscription, hasAccess } = useSubscription();
+  const hadPlan = Boolean(subscription?.expiresAt || subscription?.plan);
+  const expired = hadPlan && !hasAccess;
+
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [error, setError] = useState('');
 
@@ -60,7 +63,7 @@ export function Subscription() {
         amount: amount.toString(),
         currency: currency,
         name: 'Billora',
-        description: 'Workspace Subscription',
+        description: expired ? 'Workspace Renewal' : 'Workspace Subscription',
         order_id: orderId,
         handler: async function (response: any) {
           try {
@@ -73,25 +76,22 @@ export function Subscription() {
                 signature: response.razorpay_signature
               })
             });
-            
+
             if (!verifyRes.ok) throw new Error('Payment verification failed.');
-            
-            // Client-side Firestore update
-            const { setDoc, doc, Timestamp } = await import('firebase/firestore');
-            const { db } = await import('@/lib/firebase');
-            const months = planId === 'monthly' ? 1 : planId === 'half_yearly' ? 6 : 12;
+
             const now = new Date();
-            const expiresAt = new Date(now);
-            expiresAt.setMonth(expiresAt.getMonth() + months);
-            
+            const expiresAt = computeRenewalExpiry(toDate(subscription?.expiresAt), planMonths(planId), now);
+
             await setDoc(doc(db, 'subscriptions', user.uid), {
               uid: user.uid,
+              email: user.email || subscription?.email || '',
               plan: planId,
               status: 'active',
               paymentId: response.razorpay_payment_id,
               orderId: response.razorpay_order_id,
               startedAt: Timestamp.fromDate(now),
               expiresAt: Timestamp.fromDate(expiresAt),
+              updatedAt: Timestamp.fromDate(now),
             }, { merge: true });
 
             window.location.href = '/dashboard';
@@ -119,25 +119,49 @@ export function Subscription() {
       <div className={styles.brand}><img src="/logo.jpg" alt="Billora" className={styles.brandLogo} />Billora</div>
       <button onClick={() => logout()}><LogOut size={16}/> Sign out</button>
     </header>
-    
+
     <section className={styles.hero}>
-      <div className={styles.icon}>{active ? <CheckCircle2 size={32}/> : <Crown size={32}/>}</div>
+      <div className={styles.icon}>{hasAccess ? <CheckCircle2 size={32}/> : expired ? <Clock size={32}/> : <Crown size={32}/>}</div>
       <p>Workspace Access</p>
-      <h1>{active ? 'Your subscription is active.' : 'Choose your plan'}</h1>
-      <span>{active ? 'All your dashboard features are unlocked.' : 'Select a subscription plan below to instantly unlock your billing workspace and start growing your shop.'}</span>
+      <h1>
+        {hasAccess ? 'Your subscription is active.' : expired ? 'Your plan has expired.' : 'Choose your plan'}
+      </h1>
+      <span>
+        {hasAccess
+          ? 'All your dashboard features are unlocked for this plan period.'
+          : expired
+            ? 'Access is on hold until you renew. Your bills, products, customers, and shop data are still saved and will return as soon as payment is complete.'
+            : 'Select a subscription plan below to unlock your billing workspace for that plan period.'}
+      </span>
     </section>
 
     {error && <div className={styles.error}><p>{error}</p></div>}
 
-    {active ? 
+    {hasAccess &&
       <section className={styles.activeCard}>
         <CheckCircle2 size={24}/>
         <div>
           <b>Workspace unlocked</b>
-          <span>Access remains active until {subscription.expiresAt?.toDate().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}.</span>
+          <span>Access remains active until {formatPlanDate(subscription?.expiresAt)}.</span>
+          <Link className={styles.dashLink} to="/dashboard">Open dashboard</Link>
         </div>
       </section>
-      : 
+    }
+
+    {expired &&
+      <section className={styles.holdCard}>
+        <ShieldCheck size={24}/>
+        <div>
+          <b>Data is held, not deleted</b>
+          <span>
+            Your previous {subscription?.plan?.replace('_', ' ')} plan ended on {formatPlanDate(subscription?.expiresAt)}.
+            Renew any plan below to restore this account’s dashboard access and the same records.
+          </span>
+        </div>
+      </section>
+    }
+
+    {(!hasAccess || expired) &&
       <div className={styles.plans}>
         {plans.map((plan) => (
           <article className={plan.featured ? styles.featured : ''} key={plan.id}>
@@ -145,12 +169,12 @@ export function Subscription() {
             <h2>{plan.name}</h2>
             <p className={styles.price}><strong>{plan.price}</strong><span>{plan.period}</span></p>
             <span className={styles.gst}>{plan.note}</span>
-            <button 
-              className={styles.pay} 
+            <button
+              className={styles.pay}
               onClick={() => handlePayment(plan.id)}
               disabled={loadingPlan !== null}
             >
-              {loadingPlan === plan.id ? <Loader2 size={16} className={styles.spin} /> : 'Choose ' + plan.name}
+              {loadingPlan === plan.id ? <Loader2 size={16} className={styles.spin} /> : (expired ? 'Renew ' : 'Choose ') + plan.name}
             </button>
             <ul>
               <li><CheckCircle2 size={16}/> Unlimited invoices</li>

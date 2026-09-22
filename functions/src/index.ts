@@ -68,7 +68,11 @@ export const verifySubscriptionPayment = onCall({ region, cors: true, secrets: [
   if (!attempt.exists || attempt.data()?.uid !== uid) throw new HttpsError('permission-denied', 'Payment order is not assigned to this account.');
   
   const planId = attempt.data()?.planId as PlanId;
-  const now = new Date(); const expiresAt = expiryFrom(now, plans[planId].months);
+  const now = new Date();
+  const current = await adminDb.doc(`subscriptions/${uid}`).get();
+  const currentExpiry = current.data()?.expiresAt?.toDate?.();
+  const startFrom = currentExpiry && currentExpiry > now ? currentExpiry : now;
+  const expiresAt = expiryFrom(startFrom, plans[planId].months);
   
   await adminDb.doc(`subscriptions/${uid}`).set({ uid, email: request.auth?.token.email || '', plan: planId, status: 'active', amount: plans[planId].amount / 100, paymentId, orderId, startedAt: Timestamp.fromDate(now), expiresAt: Timestamp.fromDate(expiresAt), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
   await attempt.ref.update({ paymentId, verifiedAt: FieldValue.serverTimestamp() });
@@ -90,9 +94,13 @@ export const getAdminOverview = onCall({ region, cors: true }, async (request) =
   requireAdmin(request.auth?.token.admin as boolean | undefined);
   const [users, subscriptions, invoices] = await Promise.all([adminDb.collection('users').get(), adminDb.collection('subscriptions').get(), adminDb.collection('invoices').get()]);
   const now = new Date(); const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()); const startMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const activeSubscriptions = subscriptions.docs.filter((item) => item.data().status === 'active' && item.data().expiresAt?.toDate() > now);
+  const activeSubscriptions = subscriptions.docs.filter((item) => item.data().status !== 'cancelled' && item.data().expiresAt?.toDate() > now);
   const invoiceData = invoices.docs.map((item) => item.data());
   const sum = (entries: typeof invoiceData) => entries.reduce((total, invoice) => total + Number(invoice.grandTotal || 0), 0);
-  const recentClients = users.docs.slice(0, 10).map((item) => ({ uid: item.id, email: item.data().email || '', createdAt: item.data().createdAt?.toDate()?.toISOString() || null, subscription: subscriptions.docs.find((subscription) => subscription.id === item.id)?.data().status || 'none' }));
+  const recentClients = users.docs.slice(0, 10).map((item) => {
+    const sub = subscriptions.docs.find((subscription) => subscription.id === item.id)?.data();
+    const isActive = sub?.expiresAt?.toDate() > now && sub?.status !== 'cancelled';
+    return { uid: item.id, email: item.data().email || '', createdAt: item.data().createdAt?.toDate()?.toISOString() || null, subscription: isActive ? 'active' : (sub ? 'expired' : 'none') };
+  });
   return { clients: users.size, activeSubscriptions: activeSubscriptions.length, totalTurnover: sum(invoiceData), monthlyTurnover: sum(invoiceData.filter((invoice) => invoice.createdAt?.toDate() >= startMonth)), dailyTurnover: sum(invoiceData.filter((invoice) => invoice.createdAt?.toDate() >= startToday)), recentClients };
 });

@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Crown, RefreshCw, UsersRound, Plus, Clock, Edit2, MessageSquare, Mail } from 'lucide-react';
-import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { listContactMessages } from '@/lib/firestore';
 import styles from './Admin.module.css';
+
+const getDate = (val: any) => val?.toDate ? val.toDate() : (val ? new Date(val) : new Date(0));
 
 type Overview = { 
   clients: number; 
@@ -38,20 +40,18 @@ export function Admin() {
       setMessages(contactMessages);
 
       const now = new Date();
-      const getDate = (val: any) => val?.toDate ? val.toDate() : (val ? new Date(val) : new Date(0));
-      
-      const activeSubscriptions = subsSnap.docs.filter((item) => item.data().status === 'active' && getDate(item.data().expiresAt) > now);
+      const activeSubscriptions = subsSnap.docs.filter((item) => getDate(item.data().expiresAt) > now && item.data().status !== 'cancelled');
       
       const allUsers = usersSnap.docs.map(item => ({ uid: item.id, email: item.data().email || '' }));
       
       const clientList = usersSnap.docs.map((item) => {
         const sub = subsSnap.docs.find((s) => s.id === item.id)?.data();
-        const isActive = sub?.status === 'active' && getDate(sub.expiresAt) > now;
+        const isActive = sub && getDate(sub.expiresAt) > now && sub.status !== 'cancelled';
         return { 
           uid: item.id, 
           email: item.data().email || '', 
           createdAt: item.data().createdAt ? getDate(item.data().createdAt).toISOString() : null, 
-          subscription: isActive ? 'active' : (sub?.status || 'none')
+          subscription: isActive ? 'active' : (sub ? 'expired' : 'none')
         };
       });
 
@@ -85,7 +85,10 @@ export function Admin() {
         return;
       }
       const now = new Date();
-      const expiresAt = new Date(now);
+      const currentSnap = await getDoc(doc(db, 'subscriptions', targetUser.uid));
+      const currentExpiry = currentSnap.exists() ? getDate(currentSnap.data()?.expiresAt) : now;
+      const startFrom = currentExpiry > now ? currentExpiry : now;
+      const expiresAt = new Date(startFrom);
       expiresAt.setMonth(expiresAt.getMonth() + parseInt(grantDuration)); 
       
       await setDoc(doc(db, 'subscriptions', targetUser.uid), {
@@ -94,10 +97,10 @@ export function Admin() {
         plan: `manual_grant_${grantDuration}m`,
         status: 'active',
         amount: Number(grantAmount),
-        startedAt: now,
-        expiresAt: expiresAt,
+        startedAt: Timestamp.fromDate(now),
+        expiresAt: Timestamp.fromDate(expiresAt),
         grantedBy: 'admin',
-        updatedAt: now
+        updatedAt: Timestamp.fromDate(now)
       }, { merge: true });
       
       setGrantMsg(`Successfully granted ${grantDuration} months access.`);

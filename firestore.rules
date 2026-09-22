@@ -22,37 +22,47 @@ service cloud.firestore {
       return isAuthenticated() && request.resource.data.userId == request.auth.uid;
     }
 
+    // Plan validity only. Shop records stay stored after expiry.
+    function hasActiveSubscription() {
+      let path = /databases/$(database)/documents/subscriptions/$(request.auth.uid);
+      return exists(path) && get(path).data.expiresAt is timestamp && get(path).data.expiresAt > request.time;
+    }
+
+    function canUseShopData() {
+      return hasActiveSubscription() || isAdmin();
+    }
+
     // Settings Collection
     match /company_settings/{settingId} {
-      allow read, write: if isAuthenticated() && request.auth.uid == settingId;
+      allow read, write: if isAuthenticated() && request.auth.uid == settingId && canUseShopData();
     }
     
     // Products Collection
     match /products/{productId} {
-      allow read, update, delete: if isOwner();
-      allow create: if isCreatingWithOwnerId();
+      allow read, update, delete: if isOwner() && canUseShopData();
+      allow create: if isCreatingWithOwnerId() && canUseShopData();
     }
     
     // Invoices / Bills Collection
     match /invoices/{invoiceId} {
-      allow read, update, delete: if isOwner();
-      allow create: if isCreatingWithOwnerId();
+      allow read, update, delete: if isOwner() && canUseShopData();
+      allow create: if isCreatingWithOwnerId() && canUseShopData();
     }
     match /bills/{billId} {
-      allow read, update, delete: if isOwner();
-      allow create: if isCreatingWithOwnerId();
+      allow read, update, delete: if isOwner() && canUseShopData();
+      allow create: if isCreatingWithOwnerId() && canUseShopData();
     }
     
     // Orders Collection
     match /orders/{orderId} {
-      allow read, update, delete: if isOwner();
-      allow create: if isCreatingWithOwnerId();
+      allow read, update, delete: if isOwner() && canUseShopData();
+      allow create: if isCreatingWithOwnerId() && canUseShopData();
     }
     
     // Customers Collection
     match /customers/{customerId} {
-      allow read, update, delete: if isOwner();
-      allow create: if isCreatingWithOwnerId();
+      allow read, update, delete: if isOwner() && canUseShopData();
+      allow create: if isCreatingWithOwnerId() && canUseShopData();
     }
     
     // Users Collection (Users can only read/write their own record, Admin can read all)

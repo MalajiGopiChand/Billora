@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { BarChart3, Crown, FilePlus2, Files, LogOut, Menu, Package, User, Users, X, Phone } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useSubscription } from '../context/SubscriptionContext';
+import { formatPlanDate } from '@/lib/subscription';
 import styles from './AppLayout.module.css';
 
 const links = [
@@ -17,6 +19,7 @@ const links = [
 export function AppLayout() {
   const [open, setOpen] = useState(false);
   const { logout, user, isAdmin } = useAuth();
+  const { subscription } = useSubscription();
   const location = useLocation();
   const title = links.find(([path]) => path === location.pathname)?.[1] ?? 'Customer Profile';
   
@@ -27,7 +30,7 @@ export function AppLayout() {
     <aside className={`${styles.sidebar} ${open ? styles.open : ''}`}>
       <div className={styles.brand}><img src="/logo.jpg" alt="Billora Logo" className={styles.brandLogo} /><div><strong>Billora</strong><small>Billing Suite</small></div><button className={styles.close} onClick={() => setOpen(false)}><X size={20} /></button></div>
       <nav>{visibleLinks.map(([to, label, Icon]) => <NavLink key={to} to={to} end={to === '/dashboard'} onClick={() => setOpen(false)} className={({ isActive }) => isActive ? styles.active : ''}><Icon size={19} />{label}</NavLink>)}{isAdmin && <NavLink to="/admin" onClick={() => setOpen(false)} className={({ isActive }) => isActive ? styles.active : ''}><Crown size={19}/>Admin</NavLink>}</nav>
-      <div className={styles.account}><span>{user?.email}</span><button onClick={() => logout()}><LogOut size={17} /> Sign out</button></div>
+      <div className={styles.account}><span>{user?.email}</span>{subscription?.expiresAt && <small className={styles.planUntil}>Access until {formatPlanDate(subscription.expiresAt)}</small>}<button onClick={() => logout()}><LogOut size={17} /> Sign out</button></div>
     </aside>
     {open && <button aria-label="Close navigation" className={styles.overlay} onClick={() => setOpen(false)} />}
     <main className={styles.main}>

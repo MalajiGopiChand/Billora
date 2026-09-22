@@ -38,6 +38,11 @@
 .activeCard svg { color: #16a34a; }
 .activeCard b { color: #166534; }
 .activeCard span { color: #15803d; }
+.dashLink { display: inline-block; margin-top: 12px; color: #166534; font-size: 14px; font-weight: 700; }
+.holdCard { max-width: 640px; margin: 0 auto 32px; padding: 24px; gap: 16px; align-items: flex-start; display: flex; border-radius: 16px; background: #fff7ed; border: 1px solid #fed7aa; box-shadow: 0 10px 30px rgba(0,0,0,0.03); }
+.holdCard svg { color: #c2410c; flex: 0 0 auto; }
+.holdCard b { display: block; color: #9a3412; margin-bottom: 6px; font-size: 16px; font-weight: 700; }
+.holdCard span { display: block; font-size: 14px; line-height: 1.6; color: #9a3412; }
 .spin { animation: spin 1s linear infinite; }
 .error { max-width: 640px; margin: 0 auto 24px; padding: 16px; color: #991b1b; background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; font-size: 14px; text-align: center; }
 .error p { margin: 0; }
