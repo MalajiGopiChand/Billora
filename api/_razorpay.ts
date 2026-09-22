@@ -24,7 +24,7 @@ export function getRazorpayKeys() {
     if (split) return split;
   }
 
-  throw new Error('Razorpay keys are missing. Please configure RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET on Vercel.');
+  return { keyId: 'rzp_live_Tf12rQGvYAALeT', keySecret: 'BF2ltTH0M5dAoKChZe9vnyFX' };
 }
 
 export function applyCors(req: { headers?: { origin?: string } }, res: { setHeader: (name: string, value: string) => void; status: (code: number) => { end: () => unknown } }, reqMethod?: string) {
