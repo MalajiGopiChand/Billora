@@ -1,5 +1,5 @@
-import crypto from 'crypto';
-import { applyCors, getRazorpayKeys, readJsonBody } from './_razorpay';
+import crypto from 'node:crypto';
+import { applyCors, getRazorpayKeys, readJsonBody } from './_razorpay.js';
 
 const plans = {
   monthly: { amount: 49900, months: 1 },
@@ -45,7 +45,7 @@ export default async function handler(req: any, res: any) {
     try {
       const { keyId, keySecret } = getRazorpayKeys();
       const orderRes = await fetch(`https://api.razorpay.com/v1/orders/${orderId}`, {
-        headers: { Authorization: `Basic ${Buffer.from(`${keyId}:${keySecret}`).toString('base64')}` },
+        headers: { Authorization: `Basic ${btoa(`${keyId}:${keySecret}`)}` },
       });
       const orderData = await orderRes.json();
       uid = uid || String(orderData.notes?.uid || '');

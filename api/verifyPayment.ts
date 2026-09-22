@@ -1,5 +1,5 @@
-import crypto from 'crypto';
-import { applyCors, getRazorpayKeys, readJsonBody } from './_razorpay';
+import crypto from 'node:crypto';
+import { applyCors, getRazorpayKeys, readJsonBody } from './_razorpay.js';
 
 export default async function handler(req: any, res: any) {
   if (applyCors(req, res, req.method)) return;

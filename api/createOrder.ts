@@ -1,4 +1,4 @@
-import { applyCors, getRazorpayKeys, readJsonBody } from './_razorpay';
+import { applyCors, getRazorpayKeys, readJsonBody } from './_razorpay.js';
 
 const plans = {
   monthly: { amount: 49900, months: 1 },
@@ -37,7 +37,7 @@ export default async function handler(req: any, res: any) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Basic ${Buffer.from(`${keys.keyId}:${keys.keySecret}`).toString('base64')}`,
+        Authorization: `Basic ${btoa(`${keys.keyId}:${keys.keySecret}`)}`,
       },
       body: JSON.stringify({
         amount: plans[planId as keyof typeof plans].amount,
