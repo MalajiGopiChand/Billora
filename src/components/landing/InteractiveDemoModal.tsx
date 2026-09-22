@@ -20,6 +20,9 @@ import {
   Banknote,
   Search
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
+import { ConfettiButton, confetti } from '@/registry/magicui/confetti';
 import styles from './InteractiveDemoModal.module.css';
 
 interface InteractiveDemoProps {
@@ -28,6 +31,9 @@ interface InteractiveDemoProps {
 }
 
 export function InteractiveDemoModal({ onClose, isEmbedded = false }: InteractiveDemoProps) {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
   // Demo step: 1 (Dashboard), 2 (Create Bill), 3 (Invoice Preview), 4 (Payment Success), 5 (Updated Dashboard)
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [paymentMode, setPaymentMode] = useState<'UPI' | 'Cash' | 'Card'>('UPI');
@@ -36,6 +42,12 @@ export function InteractiveDemoModal({ onClose, isEmbedded = false }: Interactiv
   // Animated counter for step 5
   const [salesDisplay, setSalesDisplay] = useState(24580);
   const [billsDisplay, setBillsDisplay] = useState(142);
+
+  useEffect(() => {
+    if (step === 4) {
+      void confetti({ particleCount: 130, spread: 85, origin: { y: 0.6 } });
+    }
+  }, [step]);
 
   useEffect(() => {
     if (step === 5) {
@@ -579,8 +591,36 @@ export function InteractiveDemoModal({ onClose, isEmbedded = false }: Interactiv
                   Invoice saved. Customer records updated and daily sales recalculating now.
                 </p>
 
-                <button onClick={() => setStep(5)} className={styles.primaryActionBtnWide}>
-                  View Updated Dashboard <ArrowRight size={16} />
+                <div className="relative" style={{ width: '100%', marginTop: '16px' }}>
+                  <ConfettiButton
+                    onClick={() => {
+                      if (user) {
+                        onClose?.();
+                        navigate('/dashboard');
+                      } else {
+                        setStep(5);
+                      }
+                    }}
+                    className={styles.primaryActionBtnWide}
+                  >
+                    Confetti 🎉 {user ? 'Open Dashboard' : 'View Updated Dashboard'} <ArrowRight size={16} />
+                  </ConfettiButton>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (user) {
+                      onClose?.();
+                      navigate('/dashboard');
+                    } else {
+                      setStep(5);
+                    }
+                  }}
+                  className={styles.secondaryBtn}
+                  style={{ marginTop: '10px', width: '100%', justifyContent: 'center' }}
+                >
+                  Directly Open Dashboard <ArrowRight size={14} />
                 </button>
               </div>
             </div>

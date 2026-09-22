@@ -1,11 +1,12 @@
-import { CheckCircle2, Crown, LogOut, ShieldCheck, Loader2, Clock } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Crown, LogOut, ShieldCheck, Loader2, Clock } from 'lucide-react';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Timestamp, doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
 import { useSubscription } from '@/context/SubscriptionContext';
 import { computeRenewalExpiry, formatPlanDate, planMonths, toDate } from '@/lib/subscription';
+import { ConfettiButton, confetti } from '@/registry/magicui/confetti';
 import styles from './Subscription.module.css';
 
 const plans = [
@@ -26,12 +27,17 @@ function loadScript(src: string) {
 
 export function Subscription() {
   const { logout, user } = useAuth();
+  const navigate = useNavigate();
   const { subscription, hasAccess } = useSubscription();
   const hadPlan = Boolean(subscription?.expiresAt || subscription?.plan);
   const expired = hadPlan && !hasAccess;
 
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [paymentSuccess, setPaymentSuccess] = useState<{
+    planName: string;
+    paymentId: string;
+  } | null>(null);
 
   const handlePayment = async (planId: string) => {
     if (!user) return;
@@ -94,7 +100,29 @@ export function Subscription() {
               updatedAt: Timestamp.fromDate(now),
             }, { merge: true });
 
-            window.location.href = '/dashboard';
+            const resolvedPlanName =
+              planId === 'yearly'
+                ? 'Yearly Plan'
+                : planId === 'half_yearly'
+                ? '6 Months Plan'
+                : 'Monthly Plan';
+
+            setPaymentSuccess({
+              planName: resolvedPlanName,
+              paymentId: response.razorpay_payment_id || 'PAY-VERIFIED',
+            });
+
+            // Burst celebration confetti
+            void confetti({
+              particleCount: 160,
+              spread: 100,
+              origin: { y: 0.55 },
+            });
+
+            // Automatically open dashboard after celebration
+            setTimeout(() => {
+              navigate('/dashboard');
+            }, 3500);
           } catch (err: any) {
             setError(err.message || 'Payment verification failed. Please contact support.');
           }
@@ -115,6 +143,46 @@ export function Subscription() {
   };
 
   return <main className={styles.page}>
+    {/* PAYMENT SUCCESS OVERLAY & CONFETTI CELEBRATION */}
+    {paymentSuccess && (
+      <div className={styles.successOverlay}>
+        <div className={styles.successCard}>
+          <div className={styles.successIconPulse}>
+            <CheckCircle2 size={42} />
+          </div>
+          <h2>Payment Successful! 🎉</h2>
+          <p className={styles.successSub}>
+            Your <strong>{paymentSuccess.planName}</strong> is verified and active. All billing and business tools are unlocked!
+          </p>
+
+          <div className={styles.successMeta}>
+            <div className={styles.successMetaRow}>
+              <span>Payment Reference:</span>
+              <strong>{paymentSuccess.paymentId}</strong>
+            </div>
+            <div className={styles.successMetaRow}>
+              <span>Status:</span>
+              <strong style={{ color: '#16a34a' }}>Active & Verified</strong>
+            </div>
+          </div>
+
+          <div className="relative">
+            <ConfettiButton
+              onClick={() => {
+                navigate('/dashboard');
+              }}
+              className={styles.confettiSuccessBtn}
+            >
+              Confetti 🎉 Open Dashboard <ArrowRight size={16} />
+            </ConfettiButton>
+          </div>
+
+          <p className={styles.autoRedirectText}>
+            Directly opening your dashboard in a few seconds...
+          </p>
+        </div>
+      </div>
+    )}
     <header>
       <div className={styles.brand}><img src="/logo.jpg" alt="Billora" className={styles.brandLogo} />Billora</div>
       <button onClick={() => logout()}><LogOut size={16}/> Sign out</button>
