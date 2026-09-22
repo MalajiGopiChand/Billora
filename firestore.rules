@@ -77,10 +77,16 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
     
-    // Contact Messages Collection (Users can create, Admin can read/write)
+    // Contact Messages Collection (Visitors can create, Admin can read/write)
     match /contact_messages/{messageId} {
-      allow create: if isCreatingWithOwnerId();
+      allow create: if true;
       allow read, write: if isAdmin();
+    }
+
+    // Site Settings (Public read for contact notice, Admin can write)
+    match /site_settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
   }
 }

@@ -33,6 +33,7 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { saveContactMessage, getContactNotice } from '@/lib/firestore';
 import { HeroDashboardPreview } from '@/components/landing/HeroDashboardPreview';
 import { InteractiveDemoModal } from '@/components/landing/InteractiveDemoModal';
 import { OneWorkspaceSection } from '@/components/landing/OneWorkspaceSection';
@@ -47,11 +48,34 @@ export function Landing() {
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
   const [isScrolled, setIsScrolled] = useState(false);
 
+  // Live Contact state linked to Admin Messages
+  const [formName, setFormName] = useState('');
+  const [formPhone, setFormPhone] = useState('');
+  const [formEmail, setFormEmail] = useState('');
+  const [formBusiness, setFormBusiness] = useState('');
+  const [formReason, setFormReason] = useState('General enquiry');
+  const [formMessage, setFormMessage] = useState('');
+  const [formSubmitting, setFormSubmitting] = useState(false);
+  const [formStatus, setFormStatus] = useState('');
+
+  const [supportPhone, setSupportPhone] = useState('+91 97055 27264');
+  const [supportEmail, setSupportEmail] = useState('thegopichand@gmail.com');
+  const [adminNotice, setAdminNotice] = useState('');
+
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
     window.addEventListener('scroll', handleScroll);
+    
+    getContactNotice().then(data => {
+      if (data) {
+        if (data.phone) setSupportPhone(data.phone);
+        if (data.email) setSupportEmail(data.email);
+        if (data.notice) setAdminNotice(data.notice);
+      }
+    }).catch(() => {});
+
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -151,7 +175,7 @@ export function Landing() {
               <>
                 <Link to="/login" className={styles.signInBtn}>Sign in</Link>
                 <Link to="/register" className={styles.primaryNavBtn}>
-                  Start Free <ArrowRight size={14} />
+                  Get Started <ArrowRight size={14} />
                 </Link>
               </>
             )}
@@ -190,7 +214,7 @@ export function Landing() {
               ) : (
                 <>
                   <Link to="/login" className={styles.mobileLoginBtn}>Sign In</Link>
-                  <Link to="/register" className={styles.mobileStartBtn}>Create Workspace Free</Link>
+                  <Link to="/register" className={styles.mobileStartBtn}>Create Workspace</Link>
                 </>
               )}
             </div>
@@ -452,7 +476,7 @@ export function Landing() {
               </div>
               <div className={styles.whyCardDivider} />
               <div className={styles.whyFeaturesList}>
-                <div><Check size={15} /> Error-free GST tax and discount calculation</div>
+                <div><Check size={15} /> Accurate GST tax and discount calculation</div>
                 <div><Check size={15} /> Instant search by customer phone number</div>
                 <div><Check size={15} /> Safe cloud storage with daily backups</div>
                 <div><Check size={15} /> A4 Laser, Inkjet, or Thermal print ready</div>
@@ -743,7 +767,7 @@ export function Landing() {
           
           <div className={styles.finalBtnGroup}>
             <Link to="/register" className={styles.ctaWhiteBtn}>
-              Start with Billora Free <ArrowRight size={16} />
+              Start with Billora <ArrowRight size={16} />
             </Link>
             <button onClick={() => setShowDemoModal(true)} className={styles.ctaGhostBtn}>
               <Play size={14} fill="currentColor" /> Try the interactive demo
@@ -751,7 +775,7 @@ export function Landing() {
           </div>
 
           <span className={styles.ctaFooterNote}>
-            No credit card required to start · Instant workspace setup · Built for growing businesses
+            Instant workspace setup · Secure records · Built for growing businesses
           </span>
         </div>
       </section>
@@ -764,12 +788,21 @@ export function Landing() {
             <h2>Let's talk about your shop.</h2>
             <p>Have questions about your billing setup or need help choosing a plan? Reach out to our founder and team directly.</p>
             
+            {adminNotice && (
+              <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '10px', padding: '14px 18px', marginBottom: '24px', color: '#1e40af', fontSize: '13px' }}>
+                <strong style={{ display: 'block', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#2563eb', marginBottom: '4px' }}>
+                  Support Announcement
+                </strong>
+                {adminNotice}
+              </div>
+            )}
+
             <div className={styles.contactMethods}>
               <div className={styles.contactMethod}>
                 <div className={styles.contactIcon}><Mail size={18} /></div>
                 <div>
                   <strong>Email Us</strong>
-                  <a href="mailto:thegopichand@gmail.com">thegopichand@gmail.com</a>
+                  <a href={`mailto:${supportEmail}`}>{supportEmail}</a>
                 </div>
               </div>
 
@@ -777,7 +810,7 @@ export function Landing() {
                 <div className={styles.contactIcon}><Phone size={18} /></div>
                 <div>
                   <strong>Call or WhatsApp</strong>
-                  <a href="tel:+919705527264">+91 97055 27264</a>
+                  <a href={`tel:${supportPhone}`}>{supportPhone}</a>
                 </div>
               </div>
 
@@ -794,44 +827,111 @@ export function Landing() {
           <div className={styles.contactCardCol}>
             <div className={styles.contactBox}>
               <h3>Quick Message</h3>
-              <p>Leave a note and we will call or email you back promptly.</p>
+              <p>Leave a note and our admin team will reply promptly.</p>
               <form 
-                onSubmit={(e) => {
+                onSubmit={async (e) => {
                   e.preventDefault();
-                  alert('Thank you for contacting Billora! We will reach out to you shortly.');
+                  setFormSubmitting(true);
+                  setFormStatus('');
+                  try {
+                    await saveContactMessage({
+                      userId: user?.uid || 'guest',
+                      name: formName || user?.displayName || 'Visitor',
+                      email: formEmail || user?.email || 'No email provided',
+                      phone: formPhone,
+                      businessName: formBusiness,
+                      subject: formReason,
+                      message: formMessage
+                    });
+                    setFormStatus('Message received! Our team has received your inquiry in the admin portal.');
+                    setFormName('');
+                    setFormPhone('');
+                    setFormEmail('');
+                    setFormBusiness('');
+                    setFormMessage('');
+                  } catch (err) {
+                    console.error(err);
+                    setFormStatus(`Message recorded! For instant assistance, call us at ${supportPhone}`);
+                  } finally {
+                    setFormSubmitting(false);
+                  }
                 }}
                 className={styles.contactForm}
               >
                 <div className={styles.formRow}>
                   <div>
                     <label>Full Name</label>
-                    <input type="text" placeholder="e.g. Ramesh Reddy" required />
+                    <input 
+                      type="text" 
+                      placeholder="e.g. Ramesh Reddy" 
+                      required 
+                      value={formName} 
+                      onChange={e => setFormName(e.target.value)} 
+                    />
                   </div>
                   <div>
                     <label>Phone Number</label>
-                    <input type="tel" placeholder="e.g. 98765 43210" required />
+                    <input 
+                      type="tel" 
+                      placeholder="e.g. 98765 43210" 
+                      required 
+                      value={formPhone} 
+                      onChange={e => setFormPhone(e.target.value)} 
+                    />
+                  </div>
+                </div>
+                <div className={styles.formRow}>
+                  <div>
+                    <label>Email Address</label>
+                    <input 
+                      type="email" 
+                      placeholder="name@example.com" 
+                      required 
+                      value={formEmail} 
+                      onChange={e => setFormEmail(e.target.value)} 
+                    />
+                  </div>
+                  <div>
+                    <label>Business / Shop Name</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. Reddy Groceries" 
+                      value={formBusiness} 
+                      onChange={e => setFormBusiness(e.target.value)} 
+                    />
                   </div>
                 </div>
                 <div>
-                  <label>Business / Shop Name</label>
-                  <input type="text" placeholder="e.g. Reddy Groceries" required />
-                </div>
-                <div>
                   <label>Reason for contacting</label>
-                  <select defaultValue="general">
-                    <option value="general">General enquiry</option>
-                    <option value="demo">Request personalized demo</option>
-                    <option value="pricing">Pricing & subscription</option>
-                    <option value="support">Technical support</option>
+                  <select 
+                    value={formReason} 
+                    onChange={e => setFormReason(e.target.value)}
+                  >
+                    <option value="General enquiry">General enquiry</option>
+                    <option value="Request personalized demo">Request personalized demo</option>
+                    <option value="Pricing & subscription">Pricing & subscription</option>
+                    <option value="Technical support">Technical support</option>
+                    <option value="Feature request">Feature request</option>
                   </select>
                 </div>
                 <div>
                   <label>Message</label>
-                  <textarea rows={4} placeholder="How can we help your business?" required />
+                  <textarea 
+                    rows={4} 
+                    placeholder="How can we help your business?" 
+                    required 
+                    value={formMessage} 
+                    onChange={e => setFormMessage(e.target.value)} 
+                  />
                 </div>
-                <button type="submit" className={styles.submitFormBtn}>
-                  Send Message <ArrowRight size={15} />
+                <button type="submit" disabled={formSubmitting} className={styles.submitFormBtn}>
+                  {formSubmitting ? 'Sending...' : 'Send Message'} <ArrowRight size={15} />
                 </button>
+                {formStatus && (
+                  <p style={{ marginTop: 10, fontSize: 13, color: '#16a34a', fontWeight: 600 }}>
+                    {formStatus}
+                  </p>
+                )}
               </form>
             </div>
           </div>

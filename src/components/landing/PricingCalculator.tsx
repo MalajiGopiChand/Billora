@@ -98,7 +98,7 @@ export function PricingCalculator() {
             <div>
               <span className={styles.resultLabel}>Estimated Counter Time Saved</span>
               <div className={styles.hugeNumber}>{hoursSaved} Hours / mo</div>
-              <p>That is roughly <strong>{Math.round(hoursSaved / 8)} full working days</strong> freed up for serving customers and growing your shop.</p>
+              <p>That is roughly <strong>{Math.round(hoursSaved / 8)} full working days</strong> saved each month for serving customers and growing your shop.</p>
             </div>
           </div>
 

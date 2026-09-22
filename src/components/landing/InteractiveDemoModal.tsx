@@ -716,14 +716,14 @@ export function InteractiveDemoModal({ onClose, isEmbedded = false }: Interactiv
               <div className={styles.finishCtaBanner}>
                 <div>
                   <h3>Experience this speed in your own shop</h3>
-                  <p>Billora makes everyday billing smooth, accurate, and completely stress-free.</p>
+                  <p>Billora makes everyday billing smooth, accurate, and completely effortless.</p>
                 </div>
                 <div className={styles.btnGroup}>
                   <button onClick={resetDemo} className={styles.secondaryBtn}>
                     <RotateCcw size={15} /> Restart Demo
                   </button>
                   <a href="/register" className={styles.ctaPrimary}>
-                    Create Your Free Workspace →
+                    Create Your Workspace →
                   </a>
                 </div>
               </div>

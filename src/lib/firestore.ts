@@ -119,11 +119,64 @@ export async function updateInvoice(uid: string, id: string, invoice: InvoiceDra
 
 export const removeInvoice = (id: string) => deleteDoc(doc(db, 'invoices', id));
 
-export async function saveContactMessage(uid: string, email: string, subject: string, message: string) {
-  return addDoc(collection(db, 'contact_messages'), { userId: uid, email, subject, message, createdAt: serverTimestamp(), read: false });
+export interface ContactMessageData {
+  userId?: string;
+  name?: string;
+  email: string;
+  phone?: string;
+  businessName?: string;
+  subject: string;
+  message: string;
+  read?: boolean;
+  createdAt?: any;
+}
+
+export async function saveContactMessage(dataOrUid: string | ContactMessageData, email?: string, subject?: string, message?: string) {
+  let payload: Record<string, any>;
+  if (typeof dataOrUid === 'object') {
+    payload = {
+      userId: dataOrUid.userId || 'guest',
+      name: dataOrUid.name || 'Anonymous Visitor',
+      email: dataOrUid.email,
+      phone: dataOrUid.phone || '',
+      businessName: dataOrUid.businessName || '',
+      subject: dataOrUid.subject,
+      message: dataOrUid.message,
+      read: false,
+      createdAt: serverTimestamp()
+    };
+  } else {
+    payload = {
+      userId: dataOrUid || 'guest',
+      email: email || 'Unknown',
+      subject: subject || '',
+      message: message || '',
+      read: false,
+      createdAt: serverTimestamp()
+    };
+  }
+  return addDoc(collection(db, 'contact_messages'), payload);
 }
 
 export async function listContactMessages() {
   const snap = await getDocs(query(collection(db, 'contact_messages'), orderBy('createdAt', 'desc')));
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export async function getContactNotice(): Promise<{ notice?: string; phone?: string; email?: string } | null> {
+  try {
+    const snap = await getDoc(doc(db, 'site_settings', 'contact_notice'));
+    return snap.exists() ? (snap.data() as any) : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function saveContactNotice(notice: string, phone?: string, email?: string) {
+  return setDoc(doc(db, 'site_settings', 'contact_notice'), {
+    notice,
+    phone: phone || '+91 97055 27264',
+    email: email || 'thegopichand@gmail.com',
+    updatedAt: serverTimestamp()
+  }, { merge: true });
 }

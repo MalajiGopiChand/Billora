@@ -18,7 +18,7 @@ export function Demo() {
         </div>
         <div className={styles.actions}>
           <Link to="/register" className={styles.start}>
-            Start Free <ArrowRight size={16} />
+            Get Started <ArrowRight size={16} />
           </Link>
         </div>
       </nav>
