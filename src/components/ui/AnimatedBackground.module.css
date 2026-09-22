@@ -4,53 +4,53 @@
   width: 100vw;
   height: 100vh;
   pointer-events: none;
-  z-index: 0;
+  z-index: -10; /* Strictly behind all content so no elements are ever obscured */
   overflow: hidden;
-  background: #ffffff;
+  background: #f4f6fa; /* Modern soft slate-pearl SaaS canvas background */
 }
 
 /* Fluid Animated Aurora Orbs */
 .orb {
   position: absolute;
   border-radius: 50%;
-  filter: blur(90px);
-  opacity: 0.42;
+  filter: blur(85px);
+  opacity: 0.52;
   will-change: transform;
 }
 
 .orb1 {
-  width: 600px;
-  height: 600px;
+  width: 650px;
+  height: 650px;
   top: -10%;
-  left: 15%;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.35) 0%, rgba(129, 140, 248, 0.15) 50%, transparent 75%);
+  left: 12%;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.45) 0%, rgba(129, 140, 248, 0.22) 50%, transparent 75%);
   animation: floatOrb1 20s ease-in-out infinite alternate;
 }
 
 .orb2 {
-  width: 550px;
-  height: 550px;
+  width: 600px;
+  height: 600px;
   top: 25%;
   right: -5%;
-  background: radial-gradient(circle, rgba(6, 182, 212, 0.32) 0%, rgba(56, 189, 248, 0.15) 50%, transparent 75%);
+  background: radial-gradient(circle, rgba(6, 182, 212, 0.42) 0%, rgba(56, 189, 248, 0.2) 50%, transparent 75%);
   animation: floatOrb2 24s ease-in-out infinite alternate;
 }
 
 .orb3 {
-  width: 650px;
-  height: 650px;
+  width: 700px;
+  height: 700px;
   bottom: -15%;
   left: 5%;
-  background: radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, rgba(52, 211, 153, 0.12) 50%, transparent 75%);
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.38) 0%, rgba(192, 132, 252, 0.18) 50%, transparent 75%);
   animation: floatOrb3 22s ease-in-out infinite alternate;
 }
 
 .orb4 {
-  width: 480px;
-  height: 480px;
+  width: 520px;
+  height: 520px;
   bottom: 20%;
-  right: 20%;
-  background: radial-gradient(circle, rgba(139, 92, 246, 0.28) 0%, rgba(192, 132, 252, 0.12) 50%, transparent 75%);
+  right: 18%;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.35) 0%, rgba(52, 211, 153, 0.16) 50%, transparent 75%);
   animation: floatOrb4 26s ease-in-out infinite alternate;
 }
 
@@ -106,14 +106,14 @@
 .gridLayer {
   position: absolute;
   inset: 0;
-  opacity: 0.45;
+  opacity: 0.55;
   mask-image: radial-gradient(ellipse 90% 70% at 50% 35%, black 40%, transparent 100%);
   -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 35%, black 40%, transparent 100%);
 }
 
-/* Subtle vignette / optical center clarity */
+/* Subtle optical clarity overlay */
 .vignette {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.7) 100%);
+  background: radial-gradient(circle at 50% 30%, rgba(244, 246, 250, 0.2) 0%, rgba(235, 240, 248, 0.7) 100%);
 }

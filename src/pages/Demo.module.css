@@ -1,8 +1,9 @@
 .page {
-  background: #ffffff;
+  background: transparent;
   min-height: 100vh;
   color: #09090b;
   position: relative;
+  z-index: 1;
   font-family: system-ui, -apple-system, sans-serif;
 }
 
@@ -76,9 +77,11 @@
 }
 
 .header {
+  position: relative;
+  z-index: 1;
   text-align: center;
   padding: 80px 20px 40px 20px;
-  background: linear-gradient(to bottom, #fdfdfc, #f4f5f7);
+  background: transparent;
 }
 
 .header h1 {
@@ -250,6 +253,8 @@
 }
 
 .cta {
+  position: relative;
+  z-index: 1;
   text-align: center;
   padding: 100px 20px;
   background: #1a1a1a;
@@ -288,6 +293,8 @@
 }
 
 .footer {
+  position: relative;
+  z-index: 1;
   text-align: center;
   padding: 40px;
   border-top: 1px solid #eee;

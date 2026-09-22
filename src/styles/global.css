@@ -3,7 +3,7 @@
 :root {
   font-family: Inter, Aptos, system-ui, -apple-system, sans-serif;
   color: #09090b;
-  background: #ffffff;
+  background: #f4f6fa;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }
@@ -16,7 +16,7 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background: #ffffff;
+  background: #f4f6fa;
   color: #09090b;
   -webkit-font-smoothing: antialiased;
 }
