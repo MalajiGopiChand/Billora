@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { endOfMonth, format, startOfMonth, startOfToday } from 'date-fns';
-import { Eye, Pencil, Plus, Search, Trash2, FileText } from 'lucide-react';
+import { Eye, Pencil, Plus, Search, Trash2, FileText, Printer } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { InvoiceModal } from '../components/InvoiceModal';
 import { useAuth } from '../context/AuthContext';
@@ -19,6 +19,7 @@ export function AllBills() {
   const [search, setSearch] = useState('');
   const [range, setRange] = useState<Range>('All');
   const [preview, setPreview] = useState<Invoice | null>(null);
+  const [autoPrint, setAutoPrint] = useState(false);
 
   const load = () => user && listInvoices(user.uid).then(setBills);
 
@@ -119,10 +120,23 @@ export function AllBills() {
                   <td className="row-actions">
                     <button
                       type="button"
-                      title="Preview / Print / PDF"
-                      onClick={() => setPreview(bill)}
+                      title="Preview / Options (A4/A5/PDF)"
+                      onClick={() => {
+                        setAutoPrint(false);
+                        setPreview(bill);
+                      }}
                     >
                       <Eye size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      title="Quick Print This Bill"
+                      onClick={() => {
+                        setAutoPrint(true);
+                        setPreview(bill);
+                      }}
+                    >
+                      <Printer size={16} />
                     </button>
                     <button
                       type="button"
@@ -168,7 +182,11 @@ export function AllBills() {
         <InvoiceModal
           invoice={preview}
           company={company}
-          onClose={() => setPreview(null)}
+          autoPrint={autoPrint}
+          onClose={() => {
+            setPreview(null);
+            setAutoPrint(false);
+          }}
         />
       )}
     </div>

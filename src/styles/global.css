@@ -241,11 +241,24 @@ textarea {
     padding: 0 !important;
     width: 100% !important;
     height: auto !important;
+    min-height: 0 !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
-  /* Hide all non-printable UI elements */
+  /* CRITICAL: When an invoice is being printed, hide the ENTIRE root app
+     so that the background page (all bills list, dashboard, sidebar, etc.)
+     is NEVER printed alongside or before the single bill. */
+  body.invoice-modal-active #root,
+  body:has(#printable-invoice) #root {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    max-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  /* Hide all non-printable UI chrome */
   .no-print,
   .no-print *,
   aside,
@@ -259,12 +272,13 @@ textarea {
     display: none !important;
   }
 
-  /* Unfold app shell, main, and modal backdrops so printable invoice flows cleanly */
-  .app-shell,
-  main,
-  [class*="content"],
-  [class*="backdrop"],
-  [class*="modal"] {
+  /* Unfold modal wrappers so #printable-invoice renders cleanly at the top of the paper */
+  body.invoice-modal-active [class*="backdrop"],
+  body.invoice-modal-active [class*="modal"],
+  body.invoice-modal-active [class*="previewContainer"],
+  body:has(#printable-invoice) [class*="backdrop"],
+  body:has(#printable-invoice) [class*="modal"],
+  body:has(#printable-invoice) [class*="previewContainer"] {
     display: block !important;
     position: static !important;
     background: transparent !important;
@@ -274,6 +288,8 @@ textarea {
     margin: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
     overflow: visible !important;
     inset: auto !important;
   }
@@ -287,6 +303,7 @@ textarea {
     border: none !important;
     page-break-after: auto;
     page-break-inside: avoid;
+    width: 100% !important;
   }
 
   #printable-invoice * {

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, FileText, IndianRupee, ReceiptText, Phone, MapPin, Eye } from 'lucide-react';
+import { ArrowLeft, FileText, IndianRupee, ReceiptText, Phone, MapPin, Eye, Printer } from 'lucide-react';
 import { InvoiceModal } from '../components/InvoiceModal';
 import { useAuth } from '../context/AuthContext';
 import { listCustomers, listInvoices, getCompanySettings } from '../lib/firestore';
@@ -15,6 +15,7 @@ export function CustomerProfile() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [company, setCompany] = useState<CompanySettings | null>(null);
   const [preview, setPreview] = useState<Invoice | null>(null);
+  const [autoPrint, setAutoPrint] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -151,9 +152,22 @@ export function CustomerProfile() {
                       <button
                         type="button"
                         title="View invoice"
-                        onClick={() => setPreview(invoice)}
+                        onClick={() => {
+                          setAutoPrint(false);
+                          setPreview(invoice);
+                        }}
                       >
                         <Eye size={15} />
+                      </button>
+                      <button
+                        type="button"
+                        title="Print invoice"
+                        onClick={() => {
+                          setAutoPrint(true);
+                          setPreview(invoice);
+                        }}
+                      >
+                        <Printer size={15} />
                       </button>
                     </td>
                   </tr>
@@ -176,7 +190,11 @@ export function CustomerProfile() {
         <InvoiceModal
           invoice={preview}
           company={company}
-          onClose={() => setPreview(null)}
+          autoPrint={autoPrint}
+          onClose={() => {
+            setPreview(null);
+            setAutoPrint(false);
+          }}
         />
       )}
     </div>
