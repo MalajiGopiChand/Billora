@@ -61,9 +61,9 @@ service cloud.firestore {
       allow read: if isAdmin();
     }
     
-    // Subscriptions Collection (Users can read their own, Admin can read/write all)
+    // Subscriptions Collection (Users can read/write their own)
     match /subscriptions/{userId} {
-      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
       allow read, write: if isAdmin();
     }
     

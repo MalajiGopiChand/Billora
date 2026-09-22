@@ -43,9 +43,14 @@ export function Subscription() {
     }
 
     try {
-      const createOrder = httpsCallable(functions, 'createSubscriptionOrder');
-      const orderRes = await createOrder({ plan: planId }) as any;
-      const { orderId, amount, currency, keyId } = orderRes.data;
+      const orderRes = await fetch('/api/createOrder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: planId, uid: user.uid })
+      });
+      if (!orderRes.ok) throw new Error('Could not create order.');
+      const orderData = await orderRes.json();
+      const { orderId, amount, currency, keyId } = orderData;
 
       const options = {
         key: keyId,
@@ -56,12 +61,36 @@ export function Subscription() {
         order_id: orderId,
         handler: async function (response: any) {
           try {
-            const verifyPayment = httpsCallable(functions, 'verifySubscriptionPayment');
-            await verifyPayment({
-              orderId: response.razorpay_order_id,
-              paymentId: response.razorpay_payment_id,
-              signature: response.razorpay_signature
+            const verifyRes = await fetch('/api/verifyPayment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                orderId: response.razorpay_order_id,
+                paymentId: response.razorpay_payment_id,
+                signature: response.razorpay_signature
+              })
             });
+            
+            if (!verifyRes.ok) throw new Error('Payment verification failed.');
+            
+            // Client-side Firestore update
+            const { setDoc, doc, Timestamp } = await import('firebase/firestore');
+            const { db } = await import('@/lib/firebase');
+            const months = planId === 'monthly' ? 1 : planId === 'half_yearly' ? 6 : 12;
+            const now = new Date();
+            const expiresAt = new Date(now);
+            expiresAt.setMonth(expiresAt.getMonth() + months);
+            
+            await setDoc(doc(db, 'subscriptions', user.uid), {
+              uid: user.uid,
+              plan: planId,
+              status: 'active',
+              paymentId: response.razorpay_payment_id,
+              orderId: response.razorpay_order_id,
+              startedAt: Timestamp.fromDate(now),
+              expiresAt: Timestamp.fromDate(expiresAt),
+            }, { merge: true });
+
             window.location.href = '/dashboard';
           } catch (err: any) {
             setError(err.message || 'Payment verification failed. Please contact support.');
