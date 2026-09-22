@@ -209,11 +209,14 @@
   background: radial-gradient(circle at 50% 0%, #f1f5f9 0%, #fafaf9 70%);
   position: relative;
   text-align: center;
+  overflow: hidden;
 }
 
 .heroContainer {
   max-width: 880px;
   margin: 0 auto;
+  position: relative;
+  z-index: 10;
 }
 
 .heroBadge {
@@ -1223,6 +1226,17 @@
   font-size: 14px;
   line-height: 1.6;
   color: #475569;
+}
+
+/* 25.5 MAGIC PARTICLES BANNER */
+.magicParticlesSection {
+  padding: 40px 24px 60px 24px;
+  background: #fafaf9;
+}
+
+.magicParticlesContainer {
+  max-width: 1140px;
+  margin: 0 auto;
 }
 
 /* 26. FINAL CTA */

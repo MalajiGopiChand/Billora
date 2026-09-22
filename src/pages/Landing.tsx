@@ -38,6 +38,8 @@ import { HeroDashboardPreview } from '@/components/landing/HeroDashboardPreview'
 import { InteractiveDemoModal } from '@/components/landing/InteractiveDemoModal';
 import { OneWorkspaceSection } from '@/components/landing/OneWorkspaceSection';
 import { PricingCalculator } from '@/components/landing/PricingCalculator';
+import { Floating3DParticles } from '@/registry/magicui/floating-3d-particles';
+import { MagicParticlesBanner } from '@/components/landing/MagicParticlesBanner';
 import styles from './Landing.module.css';
 
 export function Landing() {
@@ -224,6 +226,7 @@ export function Landing() {
 
       {/* 4. HERO SECTION */}
       <header id="home" className={styles.heroSection}>
+        <Floating3DParticles color="#3b82f6" particleCount={85} speed={0.0012} connectDistance={55} />
         <div className={styles.heroContainer}>
           <div className={styles.heroBadge}>
             <Sparkles size={14} className={styles.sparkleIcon} />
@@ -756,6 +759,13 @@ export function Landing() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* 25.5 MAGIC 3D PARTICLES INTERACTIVE SHOWCASE */}
+      <section className={styles.magicParticlesSection}>
+        <div className={styles.magicParticlesContainer}>
+          <MagicParticlesBanner onOpenDemo={() => setShowDemoModal(true)} />
         </div>
       </section>
 
