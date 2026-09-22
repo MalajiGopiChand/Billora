@@ -31,9 +31,12 @@ export const createSubscriptionOrder = onCall({ region, secrets: [razorpayKeyId,
   
   const plan = plans[planId];
   
+  const keyId = razorpayKeyId.value() || process.env.RAZORPAY_KEY_ID || 'rzp_test_TerSsmJLRMZdu0';
+  const keySecret = razorpayKeySecret.value() || process.env.RAZORPAY_KEY_SECRET || 'ybnkpQeMk3zgsS0qnucaUWIO';
+  
   const rzp = new Razorpay({
-    key_id: razorpayKeyId.value() || process.env.RAZORPAY_KEY_ID || 'rzp_test_TerSsmJLRMZdu0',
-    key_secret: razorpayKeySecret.value() || process.env.RAZORPAY_KEY_SECRET || 'ybnkpQeMk3zgsS0qnucaUWIO'
+    key_id: keyId,
+    key_secret: keySecret
   });
 
   try {
@@ -45,7 +48,7 @@ export const createSubscriptionOrder = onCall({ region, secrets: [razorpayKeyId,
     });
 
     await adminDb.doc(`payment_attempts/${order.id}`).set({ uid, planId, amount: plan.amount, createdAt: FieldValue.serverTimestamp() });
-    return { orderId: order.id, amount: order.amount, currency: order.currency, keyId: rzp.key_id, planId };
+    return { orderId: order.id, amount: order.amount, currency: order.currency, keyId, planId };
   } catch (err: any) {
     throw new HttpsError('internal', 'Payment order could not be created.');
   }
